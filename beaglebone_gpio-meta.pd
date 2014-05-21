@@ -1,0 +1,16 @@
+#N canvas 313 206 450 300 10;
+#X text 94 36 this is an example help file;
+#X obj 121 123 mycobject;
+#X obj 169 87 hsl 128 15 0 127 0 0 empty empty empty -2 -8 0 10 -262144
+-1 -1 0 1;
+#X msg 93 79 rats;
+#N canvas 134 204 549 344 META 1;
+#X text 12 5 KEYWORDS control;
+#X text 12 45 DESCRIPTION example libdir object class;
+#X text 12 65 INLET_0 float rats;
+#X text 12 25 LICENSE GPL v3;
+#X text 12 85 AUTHOR Rafael Vega \, Daniel Gómez;
+#X text 12 104 VERSION 0.1;
+#X restore 370 250 pd META;
+#X connect 2 0 1 0;
+#X connect 3 0 1 0;

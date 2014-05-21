@@ -1,0 +1,10 @@
+#N canvas 605 340 351 237 10;
+#X obj 29 147 output;
+#X msg 29 33 11 0;
+#X msg 47 59 11 1;
+#X msg 69 92 digital 11 12 13;
+#X text 179 91 Init pins 11 \, 12 and 13;
+#X text 81 40 Output 0 or 1 on pin 11;
+#X connect 1 0 0 0;
+#X connect 2 0 0 0;
+#X connect 3 0 0 0;

@@ -1,0 +1,17 @@
+#N canvas 570 198 481 323 10;
+#X msg 34 80 analog 0 1 2;
+#X obj 63 140 print analog;
+#X obj 18 164 print digital;
+#X obj 18 111 input;
+#X text 136 15 Init digital pins 11 \, 12 and 13;
+#X text 129 78 Init analog pins AIN0 \, AIN1 \, AIN2;
+#X text 104 163 Outputs messages like [11 0(;
+#X text 144 139 Outputs messages like [0 54(;
+#X msg 18 15 digital 11 12 13 a;
+#X text 192 38 Init digital pins 11 \, 12 and 13;
+#X msg 33 38 digital a pasd 11 9 0 foo;
+#X connect 0 0 3 0;
+#X connect 3 0 2 0;
+#X connect 3 1 1 0;
+#X connect 8 0 3 0;
+#X connect 10 0 3 0;
