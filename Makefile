@@ -35,10 +35,10 @@ UNITTESTS =
 #
 #------------------------------------------------------------------------------#
 
-ALL_CFLAGS = -I"$(PD_INCLUDE)"
+ALL_CFLAGS = -I"$(PD_INCLUDE)" `pkg-config glib-2.0 --cflags` 
 ALL_LDFLAGS =  
 SHARED_LDFLAGS =
-ALL_LIBS = 
+ALL_LIBS = `pkg-config glib-2.0 --cflags`
 
 
 #------------------------------------------------------------------------------#

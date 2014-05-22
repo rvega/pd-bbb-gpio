@@ -1,6 +1,8 @@
 #include "m_pd.h"
 #include <pthread.h>
 #include <unistd.h>
+#include <glib.h>
+#include <fcntl.h>
 
 #define MAX_PINS 100
 
@@ -38,6 +40,7 @@ typedef struct input {
    int digital_thread_running;
    int inited_digital_pins_count;
    float inited_digital_pins[MAX_PINS];
+   char digital_input_buffer[3];
 
    int analog_thread_running;
    int inited_analog_pins_count;
@@ -98,8 +101,38 @@ void input_stop_digital_thread(t_input* x){
 // Init pins
 // 
 
+
+gboolean input_digital_event(GIOChannel *channel, GIOCondition condition, gpointer user_data ){
+   UNUSED_PARAMETER(condition);
+
+   t_input* x = (t_input*)user_data;
+   printf("onButtonEvent\n");
+
+   GError *error = 0;
+   gsize bytes_read = 0;
+   g_io_channel_seek_position( channel, 0, G_SEEK_SET, 0 );
+   // GIOStatus rc = g_io_channel_read_chars( channel, x->digital_input_buffer, 2, &bytes_read, &error );
+   g_io_channel_read_chars( channel, x->digital_input_buffer, 2, &bytes_read, &error );
+
+   printf("bytes read: %lu", bytes_read);
+   printf("data: %s", x->digital_input_buffer);
+
+   // thank you, call again!
+
+   return 1;
+}
+
 void input_init_analog_pin(t_input* x, float pin_num){
    // TODO: do the actual initialization
+   GMainLoop* loop = g_main_loop_new( 0, 0 );
+
+   int fd = open("/sys/class/gpio/gpio30/value", O_RDONLY | O_NONBLOCK);
+   GIOChannel* channel = g_io_channel_unix_new( fd );
+   GIOCondition cond = GIOCondition(G_IO_PRI);
+   // guint id = g_io_add_watch( channel, cond, input_digital_event, (gpointer)x);
+   g_io_add_watch( channel, cond, input_digital_event, (gpointer)x);
+
+   g_main_loop_run( loop );
 
    int err = 0;
    if(err){
