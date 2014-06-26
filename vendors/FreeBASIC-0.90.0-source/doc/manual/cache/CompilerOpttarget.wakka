@@ -1,0 +1,45 @@
+{{fbdoc item="title" value="Compiler Option: -target"}}----
+Set the target platform for cross compilation
+
+{{fbdoc item="syntax"}}##
+	**-target** < //platform// >
+##
+{{fbdoc item="param"}}
+	##//platform//##
+		The target platform. (See below)
+
+{{fbdoc item="desc"}}
+	The ##-target## compiler option can be used to create an executable for a platform which is different from the host on which the source code is being compiled and linked.  Appropriate libraries and cross compilation tools (assembler, linker) must be installed for cross compilation to work.
+	
+	The behavior of ##-target## differs depending on whether the FB setup was configured as [[DevNormalVsStandalone Normal or Standalone]].
+	
+		- for Normal, such as the ""FreeBASIC-linux"" release:
+		
+		
+			Whatever is given for //platform// will be prefixed to the file names of the used gcc/binutils programs. This will typically be a system triplet such as ##i686-pc-linux-gnu##. For example, specifying ##-target i686-pc-linux-gnu## will cause the compiler to invoke ##i686-pc-linux-gnu-ld## instead of the native ##ld##.
+			
+			As an exception, if the given //platform// string matches the default FB target name for the host system, the -target option is ignored. This means that using ##-target linux## on Linux, ##-target win32## on ""Win32"" and so on, has no effect. This only affects the default FB target names listed for the Standalone setup below.
+			
+			If ##-target## is not specified, the compiler defaults to compiling for the native system, and it will invoke gcc/binutils without a target prefix.
+		
+		- for Standalone, such as the ""FreeBASIC-win32"" release:
+		
+		
+			//platform// can be one of the default FB target names:
+			
+				- dos
+				- cygwin
+				- darwin
+				- freebsd
+				- linux
+				- netbsd
+				- openbsd
+				- win32
+				- xbox
+		
+			The compilation target and the bin/ and lib/ sub-directories to use are selected base on whichever target name is given. For example, ##-target win32## causes the compiler to compile for ""Win32"" and use tools from ##bin/win32/## and libraries from ##lib/win32/##.
+
+{{fbdoc item="see"}}
+	- [[CompilerCmdLine Using the Command Line]]
+
+{{fbdoc item="back" value="CatPgCompOpt|Compiler Options"}}

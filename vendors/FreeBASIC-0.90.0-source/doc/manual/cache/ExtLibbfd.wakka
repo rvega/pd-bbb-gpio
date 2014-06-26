@@ -1,0 +1,16 @@
+{{fbdoc item="title" value="BFD, the Binary File Descriptor Library"}}----
+Provides an API to read and write object files in many different object file formats. libbfd is the core of the GNU binutils.
+
+Website: http://sourceware.org/binutils/
+Platforms supported: ""Win32"", Linux, DOS
+Headers to include: bfd.bi
+Header version: 2.16, 2.17, 2.18
+
+Define ##""__BFD_VER__""## to 216, 217, or 218 to include the bfd header for binutils 2.16, 2.17, 2.18 respectively.
+
+{{fbdoc item="ex"}}
+%%(freebasic)#define __BFD_VER__ 217
+#include "bfd.bi"
+%%
+
+{{fbdoc item="back" value="ExtLibTOC|External Library Table of Contents"}}

@@ -3,10 +3,10 @@
 #  http://puredata.info/docs/developer/Makefilebeaglebone_gpio
 LIBRARY_NAME = beaglebone_gpio
 
-# add your .cpp source files, one object per file, to the SOURCES
+# add your .c source files, one object per file, to the SOURCES
 # variable, help files will be included automatically, and for GUI
 # objects, the matching .tcl file too
-SOURCES = input.cpp output.cpp
+SOURCES = input.c output.c
 
 # list all pd objects (i.e. myobject.pd) files here, and their helpfiles will
 # be included automatically
@@ -36,10 +36,11 @@ UNITTESTS =
 #------------------------------------------------------------------------------#
 
 ALL_CFLAGS = -I"$(PD_INCLUDE)" `pkg-config glib-2.0 --cflags` 
-ALL_LDFLAGS =  
+ALL_LDFLAGS = -lpruio -L"/usr/local/lib/freebasic/" -lfb -lpthread -lprussdrv -ltermcap -lsupc++
 SHARED_LDFLAGS =
 ALL_LIBS = `pkg-config glib-2.0 --libs`
 
+        # gcc -Wall -o bbb-io bbb-io.c /usr/local/lib/freebasic/fbrt0.o  -Wno-unused-variable
 
 #------------------------------------------------------------------------------#
 #
@@ -52,7 +53,7 @@ CFLAGS = -Wall -W -g
 LDFLAGS =
 LIBS =
 
-CC = g++
+CC = gcc
 
 # get library version from meta file
 LIBRARY_VERSION = $(shell sed -n 's|^\#X text [0-9][0-9]* [0-9][0-9]* VERSION \(.*\);|\1|p' $(LIBRARY_NAME)-meta.pd)
@@ -248,53 +249,53 @@ ifeq (MINGW,$(findstring MINGW,$(UNAME)))
 endif
 
 # in case somebody manually set the HELPPATCHES above
-HELPPATCHES ?= $(SOURCES:.cpp=-help.pd) $(PDOBJECTS:.pd=-help.pd)
+HELPPATCHES ?= $(SOURCES:.c=-help.pd) $(PDOBJECTS:.pd=-help.pd)
 
 ALL_CFLAGS := $(ALL_CFLAGS) $(CFLAGS) $(OPT_CFLAGS)
 ALL_LDFLAGS := $(LDFLAGS) $(ALL_LDFLAGS)
 ALL_LIBS := $(LIBS) $(ALL_LIBS)
 
-SHARED_SOURCE ?= $(wildcard lib$(LIBRARY_NAME).cpp)
+SHARED_SOURCE ?= $(wildcard lib$(LIBRARY_NAME).c)
 SHARED_HEADER ?= $(shell test ! -e $(LIBRARY_NAME).h || echo $(LIBRARY_NAME).h)
-SHARED_LIB ?= $(SHARED_SOURCE:.cpp=.$(SHARED_EXTENSION))
+SHARED_LIB ?= $(SHARED_SOURCE:.c=.$(SHARED_EXTENSION))
 SHARED_TCL_LIB = $(wildcard lib$(LIBRARY_NAME).tcl)
 
 .PHONY = install libdir_install single_install install-doc install-examples install-manual install-unittests clean distclean dist etags $(LIBRARY_NAME)
 
-all: $(SOURCES:.cpp=.$(EXTENSION)) $(SHARED_LIB)
+all: $(SOURCES:.c=.$(EXTENSION)) $(SHARED_LIB)
 
-%.o: %.cpp
-	$(CC) $(ALL_CFLAGS) -o "$*.o" -c "$*.cpp"
+%.o: %.c
+	$(CC) $(ALL_CFLAGS) -o "$*.o" -c "$*.c"
 
 %.$(EXTENSION): %.o $(SHARED_LIB)
 	$(CC) $(ALL_LDFLAGS) -o "$*.$(EXTENSION)" "$*.o"  $(ALL_LIBS) $(SHARED_LIB)
 	chmod a-x "$*.$(EXTENSION)"
 
 # this links everything into a single binary file
-$(LIBRARY_NAME): $(SOURCES:.cpp=.o) $(LIBRARY_NAME).o lib$(LIBRARY_NAME).o
-	$(CC) $(ALL_LDFLAGS) -o $(LIBRARY_NAME).$(EXTENSION) $(SOURCES:.cpp=.o) \
+$(LIBRARY_NAME): $(SOURCES:.c=.o) $(LIBRARY_NAME).o lib$(LIBRARY_NAME).o
+	$(CC) $(ALL_LDFLAGS) -o $(LIBRARY_NAME).$(EXTENSION) $(SOURCES:.c=.o) \
 		$(LIBRARY_NAME).o lib$(LIBRARY_NAME).o $(ALL_LIBS)
 	chmod a-x $(LIBRARY_NAME).$(EXTENSION)
 
-$(SHARED_LIB): $(SHARED_SOURCE:.cpp=.o)
-	$(CC) $(SHARED_LDFLAGS) -o $(SHARED_LIB) $(SHARED_SOURCE:.cpp=.o) $(ALL_LIBS)
+$(SHARED_LIB): $(SHARED_SOURCE:.c=.o)
+	$(CC) $(SHARED_LDFLAGS) -o $(SHARED_LIB) $(SHARED_SOURCE:.c=.o) $(ALL_LIBS)
 
 install: libdir_install
 
 # The meta and help files are explicitly installed to make sure they are
 # actually there.  Those files are not optional, then need to be there.
-libdir_install: $(SOURCES:.cpp=.$(EXTENSION)) $(SHARED_LIB) install-doc install-examples install-manual install-unittests
+libdir_install: $(SOURCES:.c=.$(EXTENSION)) $(SHARED_LIB) install-doc install-examples install-manual install-unittests
 	$(INSTALL_DIR) $(DESTDIR)$(objectsdir)/$(LIBRARY_NAME)
 	$(INSTALL_DATA) $(LIBRARY_NAME)-meta.pd \
 		$(DESTDIR)$(objectsdir)/$(LIBRARY_NAME)
 	test -z "$(strip $(SOURCES))" || (\
-		$(INSTALL_PROGRAM) $(SOURCES:.cpp=.$(EXTENSION)) $(DESTDIR)$(objectsdir)/$(LIBRARY_NAME) && \
-		$(STRIP) $(addprefix $(DESTDIR)$(objectsdir)/$(LIBRARY_NAME)/,$(SOURCES:.cpp=.$(EXTENSION))))
+		$(INSTALL_PROGRAM) $(SOURCES:.c=.$(EXTENSION)) $(DESTDIR)$(objectsdir)/$(LIBRARY_NAME) && \
+		$(STRIP) $(addprefix $(DESTDIR)$(objectsdir)/$(LIBRARY_NAME)/,$(SOURCES:.c=.$(EXTENSION))))
 	test -z "$(strip $(SHARED_LIB))" || \
 		$(INSTALL_DATA) $(SHARED_LIB) \
 			$(DESTDIR)$(objectsdir)/$(LIBRARY_NAME)
-	test -z "$(strip $(wildcard $(SOURCES:.cpp=.tcl)))" || \
-		$(INSTALL_DATA) $(wildcard $(SOURCES:.cpp=.tcl)) \
+	test -z "$(strip $(wildcard $(SOURCES:.c=.tcl)))" || \
+		$(INSTALL_DATA) $(wildcard $(SOURCES:.c=.tcl)) \
 			$(DESTDIR)$(objectsdir)/$(LIBRARY_NAME)
 	test -z "$(strip $(PDOBJECTS))" || \
 		$(INSTALL_DATA) $(PDOBJECTS) \
@@ -339,8 +340,8 @@ install-unittests:
 		done
 
 clean:
-	-rm -f -- $(SOURCES:.cpp=.o) $(SOURCES_LIB:.cpp=.o) $(SHARED_SOURCE:.cpp=.o)
-	-rm -f -- $(SOURCES:.cpp=.$(EXTENSION))
+	-rm -f -- $(SOURCES:.c=.o) $(SOURCES_LIB:.c=.o) $(SHARED_SOURCE:.c=.o)
+	-rm -f -- $(SOURCES:.c=.$(EXTENSION))
 	-rm -f -- $(LIBRARY_NAME).o
 	-rm -f -- $(LIBRARY_NAME).$(EXTENSION)
 	-rm -f -- $(SHARED_LIB)
@@ -378,10 +379,10 @@ dist: $(DISTDIR)
 	$(INSTALL_DATA) $(LIBRARY_NAME)-meta.pd  $(DISTDIR)
 	test -z "$(strip $(ALLSOURCES))" || \
 		$(INSTALL_DATA) $(ALLSOURCES)  $(DISTDIR)
-	test -z "$(strip $(wildcard $(ALLSOURCES:.cpp=.tcl)))" || \
-		$(INSTALL_DATA) $(wildcard $(ALLSOURCES:.cpp=.tcl))  $(DISTDIR)
-	test -z "$(strip $(wildcard $(LIBRARY_NAME).cpp))" || \
-		$(INSTALL_DATA) $(LIBRARY_NAME).cpp  $(DISTDIR)
+	test -z "$(strip $(wildcard $(ALLSOURCES:.c=.tcl)))" || \
+		$(INSTALL_DATA) $(wildcard $(ALLSOURCES:.c=.tcl))  $(DISTDIR)
+	test -z "$(strip $(wildcard $(LIBRARY_NAME).c))" || \
+		$(INSTALL_DATA) $(LIBRARY_NAME).c  $(DISTDIR)
 	test -z "$(strip $(SHARED_HEADER))" || \
 		$(INSTALL_DATA) $(SHARED_HEADER)  $(DISTDIR)
 	test -z "$(strip $(SHARED_SOURCE))" || \
@@ -448,7 +449,7 @@ showsetup:
 	@echo "SHARED_TCL_LIB: $(SHARED_TCL_LIB)"
 	@echo "PDOBJECTS: $(PDOBJECTS)"
 	@echo "ALLSOURCES: $(ALLSOURCES)"
-	@echo "ALLSOURCES TCL: $(wildcard $(ALLSOURCES:.cpp=.tcl))"
+	@echo "ALLSOURCES TCL: $(wildcard $(ALLSOURCES:.c=.tcl))"
 	@echo "UNAME: $(UNAME)"
 	@echo "CPU: $(CPU)"
 	@echo "pkglibdir: $(pkglibdir)"

@@ -1,0 +1,316 @@
+o LLVM backend
+  - structs should be emitted as byte arrays, to let the FB side handle
+    packing/alignment, unless the fields must be emitted individually as with
+    the C backend due to global varinis with procptrs that can't be emitted in
+    form of raw bytes since they're not literal numbers/constants.
+     - LLVM has "type <{ fields... }>" for packed structs, but that's just
+       FIELD = 1, there is no direct way to do FIELD = 2 or 4.
+       clang uses a packed struct and then inserts padding fields (i8) manually.
+     - getelementptr can't be used anyways, since the AST lowers field accesses
+       to deref/bop/addrof, plus it doesn't work with bitfields anyways.
+       For now it should be ok to use bops and inttoptr/ptrtoint instructions,
+       to let the AST do address calculations, as with the C/ASM backends.
+     - LLVM doesn't have unions, it'd be easier to emit them as byte arrays
+       (instead of a struct containing the biggest member only)
+  - Debugging metadata
+  - Inline ASM = inline LLVM IR? It'd be possible to allow x86 asm though,
+    llc even has -x86-asm-syntax=intel (should find out how well it works)
+  - va_arg: Same issue as with C backend
+
+o C backend
+  - MinGW gcc doesn't have STDCALL_MS or PASCAL; we could use 'asm("<alias>")' to
+    rename symbols, however that doesn't work with DLL export tables:
+    gcc inserts the full <alias> into '.ascii " -export:<alias>"', without stripping
+    the leading underscore, causing ld errors
+  - field accesses, pointer indexing, struct layout/field alignment, etc. is all
+    still calculated on the FB side
+     - i.e. the generated C code is ABI-dependant.
+     - sizeof()/offsetof() are evaluated purely on the FB side,
+       impossible to pass all constant expressions on to the C backend...
+       (constants, array bounds, fixstr lengths, multi-dim indexing, ...)
+  - va_* is too hard to translate to C:
+     - FB has    p = va_first( )   always returns pointer to head
+                 v = va_arg( p )   always returns arg value for given pointer
+                 p = va_next( p )  returns pointer to next arg
+     - C has     va_start( );      init
+                 v = va_arg( );    returns current arg value and moves to next
+                 va_end( );        end
+     - FB allows va_* to be used like a linked list, that's not possible in C
+
+o ABI
+  - MinGW GCC 4.7 C++ defaults to __thiscall for methods like MSVC,
+    instead of __cdecl as on Linux, even though GCC doesn't use MSVC's name
+    mangling [yet].
+    - FB can probably support __thiscall with C/LLVM backends pretty easily
+
+o static member vars
+  - allow STATIC IMPORT, like EXTERN IMPORT (extract common code from cVariableDecl())
+  - the varexpr used to access (if any) is discarded since it's a static access
+    for which no specific instance is needed; currently this will even discard
+    function calls with side effects, this should be fixed, the same happens
+    with other static accesses, i.e. constants/enums.
+	type UDT
+		static i as integer
+		dummy as integer
+	end type
+
+	dim UDT.i as integer
+
+	function f( ) as UDT
+		dim x as UDT
+		print "called"
+		function = x
+	end function
+
+	print f( ).i
+
+o -exx should catch...
+  - access to ERASEd or uninited (unREDIMed) dyn array
+  - out-of-bounds dimension argument given to lbound()/ubound()
+
+[ ] ctor/dtor
+    - add 'function foo (...) as SomeObj = any', so #1682972 could be fixed AND when
+      speed is important, the temporary result instance won't be cleared
+    - ArrayClear will be used instead of a loop calling the dtors to destroy
+      local non-dynamic arrays
+      - callVarDtor will have to use astAddAfter then with scope blocks..
+
+[ ] make cUdtMember process symbols as cIdentifier does or ambiguous access
+    tests won't work
+    - check if the new optimizations won't break when -ex or -exx are used
+
+[ ] output member functions and static member data to the STABS TYPE/UDT info
+    - operators must be handled as well
+    - properties may need a __get/__set suffix
+
+[ ] STATIC
+    - allow all global operators to be declared as static methods so the private
+      members could be accessed
+
+[ ] operator overloading:
+    - add 'operator []' (or string-ish classes won't allow 'direct' char access)
+    - OPERATOR foo.() ( lb1, lb2, ..... ) AS TYPE -- array indexing, not functor
+
+o BYREF function results
+  - hPatchByvalResultToSelf() should probably check symbProcReturnsByref() now
+  - "f( 1 ) = 2" will be parsed as "f( (1) = 2 )", could parse BYREF proc params
+    differently, e.g. with cEqInParensOnlyExpr(), or just always require ()'s
+    to call BYREF procs?
+
+[ ] quirks:
+    [ ] OPEN ... FOR is not checking for mode
+    	- does QB allow that? CONS won't work without INPUT or OUTPUT
+    [X] GET and PUT shouldn't allow strings when the number of items is passed
+    [ ] -exx is giving suspicious ptr assignment when module/name are been restored inside ns'
+
+[ ] add the -lang (qb|fb) cmd-line option:
+    - "qb":
+      [ ] RESUME is not working with array bounds and null ptr checks because the labels are not passed
+          - that's the reason why QB needs a cmd-line option, every line executed needs a
+            prev and post labels to be emitted to allow that to work
+      [ ] SHARED at subs (non-shared vars at mod-level will have to be allocated
+          statically, as before)
+      [ ] STATIC shouldn't create/allocate arrays, just declare them as static
+      [ ] ()'s around function arguments passed to byref params should make a copy of the
+          argument
+      [ ] events:
+      	  - there should be a call to the event trapping function on EVERY line
+      	    emitted (we can't use threads because DOS)
+      	  - to the above work, a new cmd-line option must be added (as in QB)
+      	  [ ] on key()
+      	  [ ] on timer()
+      	  [ ] on uevent
+          - the other events are seldom, if ever, used..
+      [ ] add "qb" mangling
+          [x] symbols with same name but different sufixes than keywords
+          [ ] arrays with same name as scalars (most spaghetti-code won't compile w/o this)
+          [ ] labels with the same name as procs:
+              declare sub foo \n foo: \n goto foo \n call foo
+      [x] suffixes not optional in keywords (ie: it's always STR$, not STR)
+      [x] data type remapping
+      	  [x] INTEGER is 16-bit wide
+      	  [x] LONG is 32-bit wide
+          [x] CVI should take a short in -lang qb mode
+      [x] move all variables to function-level, implicit or explict (see no SCOPE)
+      [x] GOSUB and RETURN in subroutines (so RETURN can't be used as a shortcut to EXIT FUNCTION)
+      	  - implement it using setjmp/longjmp later in the rtlib
+      [x] periods in symbol names
+      [x] numeric labels
+      [x] params passed by reference by default
+      [x] DEF### (ie: explicit types required)
+      [x] implicit variables
+      [x] suffixes % & ! # $
+      [x] '$dynamic, '$static, '$include
+      [x] LET
+      [x] ON .. GOTO|GOSUB
+      [x] ON ERROR, RESUME
+      [x] OPTION's
+      [x] DEFSNG by default
+      [x] OPEN should be compatible with QB (ie: OPEN "DEVICE:"), the bloat doesn't
+          matter in -lang qb mode, just implement a fb_OpenDev or so in the rtlib doing
+          the parsing that will call any supported fb_hFileOpen###'s (COM, LPT, CONS, etc)
+      [x] CALL: support undefined functions as in QB, all params BYREF as ANY
+      [ ] DEF - neither a macro nor function will work.  The statements inside the DEF FN...
+          need module level scope except for the parameters which shadow module level
+          vars.  Would be like a module level GOSUB but callable from any scope, taking
+          parameters and returning a value.  Very messy.  Also, it will make any symbol
+          called Fn... invalid because it allows forward refs.
+
+      [x] no SCOPE
+      [x] no NAMESPACE
+      [x] no CLASS (and exception handling)
+      [x] no op and function overloading
+      [x] no EXTERN (periods and suffixes screw mangling)
+      [x] no multi-threading - not thread*, mutex*, cond*
+      [x] no keyword not present in QB (prefixed with '__')
+
+    - "fb" - the inverse of "qb", but show deprecated messages by now for:
+      [ ] without ON ERROR, all stmts returning rt errors should be allowed to
+          be used as functions too
+
+[ ] ParamArray, but with this syntax: foo(...) as bar
+	- array must be built at compile-time and destroyed after the call
+	- take care with objects..
+
+[ ] PP:
+    [ ] add #pragma cmdline="-foo bar -baz"
+		- painful to add
+		- don't allow it if any line was parsed already
+    - [macro expansion: won't work for inner macros
+    - support default arguments?
+
+[ ] SCOPE..END SCOPE:
+    - can't optimize multiple MEM_CLEAR's if there's any branch to
+      one of them
+    - error handlers should be restored too (or not allowed at all)
+
+[ ] disallow (in -lang qb mode):
+	dim foo as foo
+	.. and later ..
+	const|dim|function|etc foo.bar
+
+[ ] fbmain - explicit main function
+    - must check if anything but the init/end labels were defined already inside
+      the implicit main() or the mod-level constructor
+    - must delete proto and all ast nodes
+    - must create as CDECL but it doesn't have to be obligatory
+    - must support RETURN or FUNCTION = to set the result
+    - must check the params if passed byval and if they have the right types
+
+[ ] forward type defs used in byval parms of function ptr type defs shouldn't be an error
+    - the prototype mangling must be updated when that occurs, but how to do that fast
+      enough? the args would have to be linked to parent (the prototype), but updating
+      the mangled alias on every argument can be slow..
+
+[ ] add the wstring type:
+    - fb_ConsoleInput() won't call fb_DevScrnInit_ReadWstr( ), so an input to a
+      wstring won't work.. to not add more bloat, the compiler should have to
+      call fb_ConsoleInput(there_is_any_wstr_argument), not so simple..
+    - auto-convert literal strings to w- or z- on assignments, depending on the l-hand
+      side type
+    - fix the !!!FIXME!!!'s and write the !!!WRITEME!!!'s in the rtlib
+
+[ ] passing a temporary string to a zstring ptr should not make yet-another temporary
+    assignment in hStrParamToPtrArg(), just a pointer copy that later should be
+    strDelete()'d
+
+[ ] proc call:
+    - add named parameters (foo := expr)
+      - can be hard to be added because they don't have to come in order, params in
+        prototypes don't require a name and because overloading
+      - := must be a new token because the "foo bar : baz" ambiguity
+
+*** *** *** *** ***
+[ ] All functions returning STRING should actually return the FBSTRING object
+    - it must be coded in plain C to avoid C++ dependencies
+    - compiler has to allocate the descriptor as it does now following the gcc ABI
+    - any function in the run-time library returning strings will have to be
+      modified (chicken-egg problem)
+    - allocated on stack instead of using temp descriptors,
+        - better with threads, as no more locking needed in the rtlib
+        - allows STRING results to be passed between multiple rtlibs without
+          memory leaks (e.g. returned from DLL)
+    - no more STR_LOCK's
+    - no more checks for temp descriptors in all rtlib procs taking STRINGs
+
+[ ] fixed-len strings compatible with QB:
+    - no null-term, temporaries always created when passing to functions
+    - probably will need their own assign and concat functions
+
+[ ] "byval as string" arguments should make a temp copy (including descriptor)
+    of the param passed:
+    - must pass (?) the address of the temp descriptor, not the string data, what
+      will break *all* functions assuming the latter - they would have to be
+      declared as zstring ptr, what will need more changes in users' code, because
+      the non-implicit pointer deref
+
+[ ] proc def:
+    - when checking the prototype, the access modifiers must be checked too: PUBLIC, PRIVATE
+    - to support params > 64k, "ret" can't be used
+
+[ ] .stabn can't have args > 65535 (ie: line numbers)
+    - only switching to DWARF2 (ie: too complex) would fix that, let GCC do it..
+
+[ ] arrays will fail in quirk gfx funcs if multi-dimensional and have <> 0 lBounds
+
+[ ] add "fix-len|w|z|string * expr" support to array args passed by descriptor
+
+[ ] named field initializers: ( foo => bar, udt => ( 1, { 2, 3 }, 4 ) )
+    - all fields initialized must be named as a special parser routine will have to be used,
+      that will keep track of what wasn't initialized to fill 'em with 0's - static only,
+      locals are already cleared
+
+[ ] full debug support
+    - add dynamic arrays - couldn't get GDB to use Fortran-like arrays
+    - each overloaded function will show the locals of *ALL* functions
+
+[ ] inline functions
+    - better than macros as they can be "turned off" when debugged
+    - too hard to be added now due the register spills, IR must handle inter blocks and
+      keep track of live vregs
+
+o rtlib
+  - The decimal separator used/recognized by the CRT float <-> string conversion
+    functions (strtod, wcstod, sprintf, swprintf) depends on the CRT's locale
+    setting (setlocale()), i.e. STR()/VAL() and other internal users of these
+    functions will break if anyone calls setlocale() for LC_NUMERIC or LC_ALL
+    and changes away from the '.' decimal separator (e.g. gtk_init() sets LC_ALL).
+    However FB should always use '.' for portability.
+    We'd need our own float <-> string routines (PRINT USING/FORMAT may have one
+    part of that already) to really fix this.
+    
+    
+
+o classes
+  - vtable lookup should handle THIS expression with side-effects
+
+  - obvious calls to unimplemented ABSTRACTs should be disallowed,
+    i.e. if the THIS expression is a stack/global object that cannot have
+    overridden the ABSTRACT, in contrast to a object pointer or byref object
+
+  - INTERFACE ... END INTERFACE
+      - structs extending OBJECT, not allowing any fields, only methods
+      - all methods automatically are ABSTRACT
+		interface A
+			declare [abstract] sub bar( )
+		end interface
+      - IMPLEMENTS:
+		type Child [extends Parent] [implements A, B, C]
+        or allow just one interface?
+		type Child extends A
+      - multiple interfaces comes down to multiple inheritance (too hard?)
+
+  - g++/clang++ emit vtables and implicit ctor/copyctor/dtor/let into one
+    section each allowing the linker to merge/discard duplicates:
+        .linkonce (COFF: http://sourceware.org/binutils/docs/as/Linkonce.html)
+        .section ...,comdat (ELF COMDAT groups: http://sourceware.org/binutils/docs-2.23/as/Section.html#Section)
+    fbc makes them PRIVATE currently; should it be changed to reduce .exe size?
+
+  - what should CLASS keyword do? struct vs. class as in C++?
+
+  - Down casting
+     - static (base to derived)
+     - dynamic (polymorphic)
+	- dynamic_cast<toType>(ptr) is converted to: ptr = (ptr != NULL? __dynamic_cast(void *ptr, RTTI *fromType, RTTI *toType, void *nullPtr): NULL);
+
+  - exceptions - with stack unwind support?

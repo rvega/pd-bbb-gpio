@@ -1,0 +1,11 @@
+<map id="src/pruio/pruio.bi" name="src/pruio/pruio.bi">
+<area shape="rect" id="node3" href="$1_8bas.html" title="Example: minimal code for ADC input. " alt="" coords="5,83,117,111"/>
+<area shape="rect" id="node5" href="$analyse_8bas.html" title="Example: analyse the devices configurations. " alt="" coords="141,83,283,111"/>
+<area shape="rect" id="node7" href="$button_8bas.html" title="Example: get state of a button. " alt="" coords="307,83,443,111"/>
+<area shape="rect" id="node9" href="$io__input_8bas.html" title="Example: print digital and analog inputs. " alt="" coords="467,83,611,111"/>
+<area shape="rect" id="node11" href="$oszi_8bas.html" title="Example: draw a graph of analog inputs. " alt="" coords="635,83,760,111"/>
+<area shape="rect" id="node13" href="$sos_8bas.html" title="Example: blink user LED 3. " alt="" coords="784,83,907,111"/>
+<area shape="rect" id="node15" href="$stepper_8bas.html" title="Example: control a stepper motor. " alt="" coords="931,83,1072,111"/>
+<area shape="rect" id="node17" href="$triggers_8bas.html" title="Example: start measurements in MM mode by triggers. " alt="" coords="1096,83,1237,111"/>
+<area shape="rect" id="node19" href="$pruio_8bas.html" title="The main source code of the library. " alt="" coords="1261,83,1371,111"/>
+</map>

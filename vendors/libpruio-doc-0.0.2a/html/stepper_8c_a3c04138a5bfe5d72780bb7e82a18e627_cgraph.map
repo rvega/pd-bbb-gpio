@@ -1,0 +1,9 @@
+<map id="main" name="main">
+<area shape="rect" id="node3" href="$pruio__c__wrapper_8h.html#a783ac2761b68a11f7e80c0e848659f06" title="C wrapper to create a PruIo instance. " alt="" coords="109,5,181,33"/>
+<area shape="rect" id="node5" href="$pruio__c__wrapper_8h.html#a60bce72eb26d63adf65d1dd8ef161c44" title="C wrapper for function PruIo::gpio_set(). " alt="" coords="100,55,191,83"/>
+<area shape="rect" id="node7" href="$pruio__c__wrapper_8h.html#ae0db484e120ec5fe9c18581872c19a80" title="C wrapper for function PruIo::config(). " alt="" coords="105,106,185,134"/>
+<area shape="rect" id="node9" href="$stepper_8c.html#a4884a4ce4f2b4eb45dc0a71c27220ae1" title="make the motor move the next step. " alt="" coords="121,157,169,185"/>
+<area shape="rect" id="node11" href="$pruio__c__wrapper_8h.html#a09ee90d4e9a9244be99fcb025e4cfec5" title="C wrapper for function PruIo::gpio_out(). " alt="" coords="240,182,333,210"/>
+<area shape="rect" id="node13" href="$button_8c.html#a344b4ba8ac894c61c4a2814c55e4e69c" title="wait for keystroke or timeout " alt="" coords="121,258,169,286"/>
+<area shape="rect" id="node16" href="$pruio__c__wrapper_8h.html#a8e8668d0b85220f17e71154b0793b66e" title="C wrapper to destroy a PruIo instance. " alt="" coords="103,309,188,337"/>
+</map>

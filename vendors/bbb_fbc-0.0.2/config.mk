@@ -1,0 +1,1 @@
+FBFLAGS := -gen gcc

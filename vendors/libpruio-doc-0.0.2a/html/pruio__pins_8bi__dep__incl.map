@@ -1,0 +1,7 @@
+<map id="src/pruio/pruio_pins.bi" name="src/pruio/pruio_pins.bi">
+<area shape="rect" id="node3" href="$analyse_8bas.html" title="Example: analyse the devices configurations. " alt="" coords="5,83,147,111"/>
+<area shape="rect" id="node5" href="$button_8bas.html" title="Example: get state of a button. " alt="" coords="171,83,307,111"/>
+<area shape="rect" id="node7" href="$stepper_8bas.html" title="Example: control a stepper motor. " alt="" coords="331,83,472,111"/>
+<area shape="rect" id="node9" href="$triggers_8bas.html" title="Example: start measurements in MM mode by triggers. " alt="" coords="496,83,637,111"/>
+<area shape="rect" id="node11" href="$pruio_8bas.html" title="The main source code of the library. " alt="" coords="661,83,771,111"/>
+</map>

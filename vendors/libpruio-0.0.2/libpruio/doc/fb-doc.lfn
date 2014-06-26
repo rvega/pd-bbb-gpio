@@ -1,0 +1,24 @@
++++ List of Function Names +++
+pruio_new
+pruio_destroy
+pruio_config
+pruio_adc_step
+pruio_gpio_get_config
+pruio_gpio_set
+pruio_gpio_get
+pruio_gpio_out
+pruio_mm_trg_pin
+pruio_mm_trg_ain
+pruio_mm_trg_pre
+pruio_mm_start
+move
+PruIo.config
+PruIo.adc_step
+PruIo.gpio_get_config
+PruIo.gpio_set
+PruIo.gpio_get
+PruIo.gpio_out
+PruIo.mm_trg_pin
+PruIo.mm_trg_ain
+PruIo.mm_trg_pre
+PruIo.mm_start

@@ -1,0 +1,12 @@
+<map id="src/pruio/pruio.hp" name="src/pruio/pruio.hp">
+<area shape="rect" id="node3" href="$pruio_8bi.html" title="FreeBASIC header file for libpruio. " alt="" coords="647,83,748,111"/>
+<area shape="rect" id="node5" href="$1_8bas.html" title="Example: minimal code for ADC input. " alt="" coords="5,161,117,189"/>
+<area shape="rect" id="node7" href="$analyse_8bas.html" title="Example: analyse the devices configurations. " alt="" coords="141,161,283,189"/>
+<area shape="rect" id="node9" href="$button_8bas.html" title="Example: get state of a button. " alt="" coords="307,161,443,189"/>
+<area shape="rect" id="node11" href="$io__input_8bas.html" title="Example: print digital and analog inputs. " alt="" coords="467,161,611,189"/>
+<area shape="rect" id="node13" href="$oszi_8bas.html" title="Example: draw a graph of analog inputs. " alt="" coords="635,161,760,189"/>
+<area shape="rect" id="node15" href="$sos_8bas.html" title="Example: blink user LED 3. " alt="" coords="784,161,907,189"/>
+<area shape="rect" id="node17" href="$stepper_8bas.html" title="Example: control a stepper motor. " alt="" coords="931,161,1072,189"/>
+<area shape="rect" id="node19" href="$triggers_8bas.html" title="Example: start measurements in MM mode by triggers. " alt="" coords="1096,161,1237,189"/>
+<area shape="rect" id="node21" href="$pruio_8bas.html" title="The main source code of the library. " alt="" coords="1261,161,1371,189"/>
+</map>

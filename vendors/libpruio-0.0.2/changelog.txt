@@ -1,0 +1,5 @@
+Version 0.0.2
+* added: new example button.bas (.c)
+* bugfix: gpio_get returns correct value now
+* cosmetic: pruio_c_wrapper.h contains headers pruio.h and pruio.hp (all-in-one)
+* cosmetic: minor changes in documentation

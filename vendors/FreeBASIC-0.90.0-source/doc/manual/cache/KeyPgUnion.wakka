@@ -1,0 +1,104 @@
+{{fbdoc item="title" value="UNION"}}----
+Declares a union user defined type.
+
+{{fbdoc item="syntax"}}##
+	**Union** //typename//
+		//fieldname// as [[DataType datatype]]
+		[[KeyPgDeclare declare]] //member function declaration// ...
+		...
+	End Union
+##
+{{fbdoc item="param"}}
+	##//typename//##
+		Name of the ##**Union**##
+	##//fieldname//##
+		Name of a data field member
+	##//member function declaration//##
+		Any of the supported member functions
+
+{{fbdoc item="desc"}}
+	Unions are similar to a ##[[KeyPgType Type]]## structure, except that the elements of a union occupy the same space in memory (but unlike Type, Union can not contain variable-length strings, and more generally fields with constructors or destructors). The size of the Union is the size of the largest data item. A data item can be an unnamed ##[[KeyPgType Type]]##. Since they occupy the same space, only a single element can be used.
+
+	Unions support member functions including ##[[KeyPgConstructor Constructor]]##, ##[[KeyPgDestructor Destructor]]##, ##[[KeyPgMemberFunction Function]]##, ##[[KeyPgOperator Operator]]##, ##[[KeyPgProperty Property]]## and ##[[KeyPgMemberSub Sub]]##. All members of a union are public and access control is not supported. 
+
+	Unnamed type nested inside a named union cannot have function members.
+
+	A ##**Union**## can be passed as a user defined type to overloaded operator functions.
+
+{{fbdoc item="ex"}}
+{{fbdoc item="filename" value="examples/manual/udt/union.bas"}}%%(freebasic)
+' Example 1: bitfields.
+type unitType
+ union
+  dim attributeMask as uinteger
+  type    ' 32-bit uintegers can support up to 32 attributes.
+   isMilitary         : 1 as uinteger
+   isMerchant         : 1 as uinteger
+  end type
+ end union
+end type
+
+dim myunit as unitType
+myunit.isMilitary = 1
+myunit.isMerchant = 1
+print myunit.isMilitary    ' Result: 1.
+print myunit.isMerchant    ' Result: 1.
+print myunit.attributeMask ' Result: 3.
+sleep
+
+' Example 2.
+' Define our union.
+union AUnion
+	a as ubyte
+	b as integer
+end union
+' Define a composite type.
+type CompType
+	s as string * 20
+	ui as byte 'Flag to tell us what to use in union.
+	union 
+	    au as ubyte
+	    bu as integer
+	end union
+end type
+
+' Flags to let us know what to use in union.
+' You can only use a single element of a union.
+const IsInteger = 1
+const IsUByte = 2
+
+dim MyUnion as AUnion
+dim MyComposite as CompType
+
+' Can only set one value in union.
+MyUnion.a = 128
+
+MyComposite.s = "Type + Union"
+MyComposite.ui = IsInteger ' Tells us this is an integer union.
+MyComposite.bu = 1500
+
+print "Union: ";MyUnion.a
+
+print "Composite: ";
+if MyComposite.ui = IsInteger then
+	print MyComposite.bu
+elseif MyComposite.ui = IsUByte then
+	print MyComposite.au
+else
+	print "Unknown type."
+end if
+
+sleep
+%%
+
+{{fbdoc item="lang"}}
+	- Object-related features as functions defined inside the ##**Union**## block are supported only in the //[[CompilerOptlang -lang fb]]// dialect.
+	- Not available in the //[[CompilerOptlang -lang qb]]// dialect unless referenced with the alias ##**""__Union""**##.
+
+{{fbdoc item="diff"}}
+	- New to ""FreeBASIC""
+
+{{fbdoc item="see"}}
+	- ##[[KeyPgType Type]]##
+
+{{fbdoc item="back" value="CatPgUserDefTypes|User Defined Types"}}

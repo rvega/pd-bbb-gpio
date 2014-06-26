@@ -1,0 +1,94 @@
+{{fbdoc item="title" value="STATIC (Member)"}}----
+Declare a static member procedure
+
+{{fbdoc item="syntax"}}##
+	[[KeyPgType Type]] //typename//
+		[[KeyPgDeclare Declare]] **Static** [[KeyPgSub Sub]]|[[KeyPgFunction Function]] //procname// ...
+	End Type
+	
+	**Static** [[KeyPgSub Sub]]|[[KeyPgFunction Function]] //typename//.//procname// ...
+		...
+	End [[KeyPgSub Sub]]|[[KeyPgFunction Function]]
+##
+{{fbdoc item="desc"}}
+	##**Static**## methods do not have an implicit ##[[KeyPgThis This]]## instance argument passed to them. This allows them to be used like normal non-member procedures (for example with callback procedure pointers), the only difference being that they are encapsulated in the ##//typename//## namespace and have access to ##//typename//##'s ##[[KeyPgVisPrivate Private]]## or ##[[KeyPgVisProtected Protected]]## members.
+	
+	##**Static**## methods can be called directly anywhere in code, like normal non-member procedures, or on objects of type ##//typename//##, similar to non-static methods, however either way there is no implicit or explicit ##[[KeyPgThis This]]## (or explicit ##[[KeyPgBase Base]]##) access possible from within a static method.
+	
+	For member procedures with ##**Static**## in their declaration, ##**Static**## can also be specified on the corresponding procedure bodies, for improved code readability.
+
+{{fbdoc item="ex"}}
+{{fbdoc item="filename" value="examples/manual/udt/static.bas"}}%%(freebasic)
+'' Example showing how the actual procedure invoked by a member can be set at runtime.
+'' using static member procedures.
+type _Object
+
+  enum handlertype
+	ht_default
+	ht_A
+	ht_B
+  end enum
+
+  declare constructor( byval ht as handlertype = ht_default)
+
+  declare sub handler()
+
+private:
+  declare static sub handler_default( byref obj as _Object )
+  declare static sub handler_A( byref obj as _Object )
+  declare static sub handler_B( byref obj as _Object )
+  handler_func as sub( byref obj as _Object )
+
+end type
+
+constructor _Object( byval ht as handlertype )
+  select case ht
+  case ht_A
+	handler_func = @_Object.handler_A
+  case ht_B
+	handler_func = @_Object.handler_B
+  case else
+	handler_func = @_Object.handler_default
+  end select
+end constructor
+
+sub _Object.handler()
+  handler_func(this)
+end sub
+
+sub _Object.handler_default( byref obj as _Object )
+  print "Handling using default method"
+end sub
+
+sub _Object.handler_A( byref obj as _Object )
+  print "Handling using method A"
+end sub
+
+sub _Object.handler_B( byref obj as _Object )
+  print "Handling using method B"
+end sub
+
+dim objects(1 to 4) as _Object => _
+  { _
+	_Object.handlertype.ht_B, _
+	_Object.handlertype.ht_default, _
+	_Object.handlertype.ht_A _
+  }
+  '' 4th array item will be _Object.handlertype.ht_default
+
+for i as integer = 1 to 4
+  print i,
+  objects(i).handler()
+next i
+%%
+
+{{fbdoc item="diff"}}
+	- New to ""FreeBASIC""
+
+{{fbdoc item="see"}}
+	- ##[[KeyPgClass Class]]##
+	- ##[[KeyPgDeclare Declare]]##
+	- ##[[KeyPgType Type]]##
+	- ##[[KeyPgStatic Static]]##
+
+{{fbdoc item="back" value="CatPgProcedures|Procedures"}}{{fbdoc item="back" value="CatPgUserDefTypes|User Defined Types"}}

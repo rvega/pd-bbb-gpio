@@ -1,0 +1,92 @@
+#ifdef FOR_DOXYGEN_ONLY
+/*!
+\file pruio.hp
+\brief Synchronize parameters between FreeBASIC, C and PASM source code.
+
+This file is used in FreeBASIC, C and PASM source code to synchonize
+the positions and the size of parameter blocks, exchanged in DRam. It
+also contains the message code numbers.
+
+Since all the syntaxes have different markers for comments, we cannot
+use 'normal' comments here. We've to enclose the comment text in
+preprocessor blocks that never get parsed.
+
+\note We cannot use hexadecimal numbers here since syntaxes are different.
+
+\def PRUIO_BALL_AZ
+\brief The number of CPU balls to handle.
+\def PRUIO_BALL_OFFS
+\brief The DRam offset to store ball configs.
+\def PRUIO_GPIO_AZ
+\brief The number of GPIO devices.
+\def PRUIO_GPIO_OFFS
+\brief The offset in DRam to store the GPIO info.
+\def PRUIO_GPIO_DATA
+\brief The size of the UDT for initial GPIO data.
+\def PRUIO_GPIO_BLCK
+\brief The size of the GpioSet UDT for GPIO handling.
+
+\def PRUIO_ADC_OFFS
+\brief The offset in DRam to store ADC parameters for config.
+\def PRUIO_ADC_DATA
+\brief The size of a full initial ADC data block.
+\def PRUIO_ADC_EMPTY
+\brief The size of an empty initial ADC data block.
+\def PRUIO_ADC_BUFF
+\brief The DRam offset for ADC samples.
+\def PRUIO_TRG_PARA
+\brief The DRam offset to store trigger parameters.
+
+\def PRUIO_IRPT
+\brief The interrupt number to use (25 => uio5).
+
+Note that the interrupt channel and mask has to be adapted in file
+pruio.bi in case of any change here.
+
+\def PRUIO_MSG_INIT_OK
+\brief Message send by \ref PruIo::PruIo.
+\def PRUIO_MSG_EXIT_OK
+\brief Message send by \ref PruIo::~PruIo.
+\def PRUIO_MSG_ADC_ERRR
+\brief Message send by \ref PruIo::config() on errors.
+\def PRUIO_MSG_IO_OK
+\brief Message send by \ref PruIo::config() in IO mode.
+\def PRUIO_MSG_MM_WAIT
+\brief Message send by \ref PruIo::config() in MM mode and after each call to \ref PruIo::mm_start().
+\def PRUIO_MSG_MM_TRG1
+\brief Message send by \ref PruIo::mm_start() while waiting for trigger 1 event.
+\def PRUIO_MSG_MM_TRG2
+\brief Message send by \ref PruIo::mm_start() while waiting for trigger 2 event.
+\def PRUIO_MSG_MM_TRG3
+\brief Message send by \ref PruIo::mm_start() while waiting for trigger 3 event.
+\def PRUIO_MSG_MM_TRG4
+\brief Message send by \ref PruIo::mm_start() while waiting for trigger 4 event.
+
+*/
+#endif
+
+#define PRUIO_BALL_AZ   109
+#define PRUIO_BALL_OFFS 256
+
+#define PRUIO_GPIO_AZ   3
+#define PRUIO_GPIO_OFFS 64
+#define PRUIO_GPIO_DATA 24
+#define PRUIO_GPIO_BLCK 32
+
+#define PRUIO_ADC_OFFS  512
+#define PRUIO_ADC_DATA  228
+#define PRUIO_ADC_EMPTY 12
+#define PRUIO_ADC_BUFF  16
+#define PRUIO_TRG_PARA  4
+
+#define PRUIO_IRPT 25
+
+#define PRUIO_MSG_INIT_OK   4294967295
+#define PRUIO_MSG_EXIT_OK   4294967294
+#define PRUIO_MSG_ADC_ERRR  4294967293
+#define PRUIO_MSG_IO_OK     4294967292
+#define PRUIO_MSG_MM_WAIT   4294967291
+#define PRUIO_MSG_MM_TRG1   4294967290
+#define PRUIO_MSG_MM_TRG2   4294967289
+#define PRUIO_MSG_MM_TRG3   4294967288
+#define PRUIO_MSG_MM_TRG4   4294967287

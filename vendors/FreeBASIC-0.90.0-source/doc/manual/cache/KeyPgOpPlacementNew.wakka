@@ -1,0 +1,82 @@
+{{fbdoc item="title" value="Operator Placement New"}}----
+Operator to construct an object at a specified memory address.
+
+{{fbdoc item="syntax"}}##
+	//result// = **New(//address//)** //[[DataType datatype]]//
+		//or//
+	//result// = **New(//address//)** //[[DataType datatype]]// ( //initializers//, ... )
+		//or//
+	//result// = **New(//address//)** //[[DataType datatype]]//**[** //count// **]**
+##
+{{fbdoc item="param"}}
+	##//address//## 
+		the location in memory to construct. the parenthesis are **not** optional.
+	##//initializers//##
+		Initial value(s) for the variable.
+	##//datatype//##
+		name of the data type to construct.
+	##//count//##
+		Number of elements to construct.
+
+{{fbdoc item="ret"}}
+	A pointer of type ##[[DataType datatype]]## to the newly constructed data.
+
+{{fbdoc item="desc"}}
+	The ##**Placement New**## operator constructs a specified data type at the specified memory location. 
+
+	The ##**Placement New**## operator cannot be directly used with ##[[KeyPgString String]]##, but works with ##[[KeyPgType UDT]]## containing string.
+
+	For simple types, like integers, an initial value can be given. For types without ##[[KeyPgConstructor constructor]]##s, initial values can be specified for each field. Types that have constructors can have their constructors called by ##**Placement New**## as well. If no initializers are given, the default values for those types will be set.
+
+	Memory is **not** allocated when using the ##**Placement New**## operator. Instead, the memory at the specified ##//address//## is used.
+	It is incorrect to call ##[[KeyPgOpDelete Delete]]## on the address (otherwise, the memory is deallocated). The proper way is to only call the destructor (with syntax as for a member method, using member access operator).
+	See examples below for proper //placement new// usage.
+
+	Specifying an initial value of ##[[KeyPgAny Any]]##, as in ##**New**(//address//)//datatype//(**Any**)## or ##**New**(//address//)//datatype//[//count//]{**Any**}## will not initialize the data.  This is only valid on data types that do not have constructors.
+
+{{fbdoc item="ex"}}
+{{fbdoc item="filename" value="examples/manual/operator/placement_new.bas"}}%%(freebasic)
+'' "placement new" example
+
+type Rational
+	as integer	numerator, denominator
+	Declare Destructor ( )
+end type
+
+Destructor Rational ( )
+End Destructor
+
+scope
+	
+	'' allocate some memory to construct as a Rational
+	dim as any ptr ap = callocate(len(Rational))
+	
+	'' make the placement new call
+	dim as Rational ptr r = new (ap) Rational( 3, 4 )
+	
+	'' you can see, the addresses are the same, just having different types in the compiler
+	print ap, r
+	
+	'' confirm all is okay
+	print r->numerator & "/" & r->denominator
+
+	'' destroying must be done explicitly, because delete will automatically free the memory
+	'' and that isn't always okay when using placement new. ALWAYS explicitly call the destructor.
+	r->destructor( )
+	
+	'' we explicitly allocated, so we explicitly deallocate
+	deallocate( ap )
+
+end scope
+%%
+{{fbdoc item="lang"}}
+	- Only available in the //[[CompilerOptlang -lang fb]]// dialect.
+
+{{fbdoc item="diff"}}
+	- New to ""FreeBASIC""
+
+{{fbdoc item="see"}}
+	- ##[[KeyPgOpDelete Delete]]##
+	- ##[[KeyPgOpNew New]]##
+
+{{fbdoc item="back" value="CatPgOpMemory|Memory Operators"}}{{fbdoc item="back" value="CatPgOperators|Operators"}}

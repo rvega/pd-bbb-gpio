@@ -1,0 +1,81 @@
+{{fbdoc item="title" value="ANY"}}----
+##**Any**## is not a real type, but it is used as a placeholder in various ways.
+
+{{fbdoc item="syntax"}}##
+	//identifier// [[KeyPgAs as]] **Any** [[KeyPgPointer Pointer]]|[[KeyPgPtr ptr]]
+##//or//##
+	[[KeyPgDim Dim]] //identifier// [[KeyPgAs as]] [[DataType datatype]] = **Any**
+##//or//##
+	[[KeyPgDeclare declare]] { [[KeyPgSub sub]] | [[KeyPgFunction function]] } //identifier// ( [ ..., ] [[KeyPgByref byref]] //identifier// [[KeyPgAs as]] **Any** [ , ... ] )
+##
+{{fbdoc item="desc"}}
+	##**Any**## can be used in three different contexts: pointers; variable initialization; and to indicate an unknown data type in a function declaration.
+	
+	##**1)**## A special pointer type called the ##**Any** [[KeyPgPtr Pointer]]## allows pointing to any variable type. If you cast it to an ##[[KeyPgInteger Integer]] [[KeyPgPtr Pointer]]##, it will operate on the subject as though it were an ##[[KeyPgInteger Integer]]##, etc.
+
+	You may not create variables of the type ##**Any**##. It is illegal to dereference an ##**Any Pointer**##, but an ##**Any Pointer Pointer**## may be dereferenced, because doing so will result in an ##**Any Pointer**##. Trying to dereference that resulting ##**Any Pointer**## would be illegal.
+
+	This should not be confused with ##**Variant**##, a Visual Basic data type which can contain any type of variable. ""FreeBASIC"" does not natively support the ##**Variant**## type.
+	
+	##**2) **## ##**Any**## can be used as a fake initializer to disable the default initialization to ##0## of the variables. This may save time in critical sections of the programs. It is up to the program to fill the variables with significant data. You may recognize this as the default behavior of C.
+	
+	##**3) **## **##Any##** can be used  in function prototypes (in a ##[[KeyPgDeclare Declare]]## statement) with ##[[KeyPgByref ByRef]]## arguments to disable the compiler checking for the correct type of the variable passed. This use of ##**Any**## is deprecated and it is only there for compatibility with QB, where it was the only way of passing arrays as arguments.
+
+{{fbdoc item="ex"}}
+{{fbdoc item="filename" value="examples/manual/misc/any.bas"}}%%(freebasic)
+Declare Sub echo(ByVal x As Any Ptr) '' echo will accept any pointer type
+
+Dim As Integer a(0 To 9) = Any '' this variable is not initialized
+Dim As Double  d(0 To 4)
+
+Dim p As Any Ptr
+
+Dim pa As Integer Ptr = @a(0)
+Print "Not initialized ";
+echo pa       '' pass to echo a pointer to integer
+
+Dim pd As Double Ptr = @d(0)
+Print "Initialized ";
+echo pd       '' pass to echo a pointer to double
+
+p = pa     '' assign to p a pointer to integer
+p = pd     '' assign to p a pointer to double      
+
+Sleep
+
+Sub echo (ByVal x As Any Ptr)
+	Dim As Integer i
+	For i = 0 To 39
+	    'echo interprets the data in the pointer as bytes
+	    Print Cast(UByte Ptr, x)[i] & " ";
+	Next
+	Print
+End Sub
+%%
+
+{{fbdoc item="filename" value="examples/manual/misc/any-param.bas"}}%%(freebasic)
+'Example of ANY disabling the variable type checking
+Declare Sub echo (ByRef a As Any) '' ANY disables the checking for the type of data passed to the function
+
+Dim x As Single
+x = -15
+echo x                  '' Passing a single to a function that expects an integer. The compiler does not complain!!             
+Sleep
+
+Sub echo (ByRef a As Integer)
+  Print Hex(a)         
+End Sub
+
+%%
+
+{{fbdoc item="lang"}}
+	- Not available in the //[[CompilerOptlang -lang qb]]// dialect.
+
+{{fbdoc item="diff"}}
+	- Pointers and initializers are new to ""FreeBASIC"".
+
+{{fbdoc item="see"}}
+	- ##[[KeyPgDim Dim]]##
+	- ##[[KeyPgDeclare Declare]]##
+
+{{fbdoc item="back" value="CatPgProcedures|Procedures"}}
