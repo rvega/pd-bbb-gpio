@@ -1,4 +1,4 @@
-The libpruss library is used for accessing the GPIOs and the analog inputs in the BeagleBone Black. See [this thread](http://www.freebasic.net/forum/viewtopic.php?f=14&p=198448#p198448)
+The libpruss library is used for accessing the GPIOs and the analog inputs in the BeagleBone Black. See [this thread](http://www.freebasic.net/forum/viewtopic.php?f=14&p=198448#p198448) and the install.sh script.
 
 Some other useful links:
 
