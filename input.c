@@ -254,7 +254,6 @@ static void* input_poll_loop(void* user_param){
          }
 
          if(x->digital_values[pin] != digital_value && x->debouncing[pin]==0){
-            /* debug("B %u",x->debouncing[pin]); */
             x->digital_values[pin] = digital_value; 
 
             pin_symbol = gensym(input_pin_number_to_string(pin));
@@ -268,11 +267,9 @@ static void* input_poll_loop(void* user_param){
             x->debouncing[pin] = 1;
          }
          else if(x->debouncing[pin]==DEBOUNCING_PERIOD){
-            /* debug("C %u",x->debouncing[pin]); */
             x->debouncing[pin]=0;
          }
          else if(x->debouncing[pin]>0){
-            /* debug("D %u",x->debouncing[pin]); */
             x->debouncing[pin] ++;
          }
       }
