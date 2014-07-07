@@ -43,8 +43,7 @@
 //
 
 #define MAX_DIGITAL_PINS 67
-#define MAX_ANALOG_PINS 7
-#define DEBOUNCING_PERIOD 1
+#define MAX_ANALOG_PINS 14 // Analog iputs 7 to 14 are handled by mux
 
 static unsigned int input_string_to_pin_number(char* str){
    if(!strcmp(str, "P8_03")) return P8_03;
@@ -108,9 +107,10 @@ static unsigned int input_string_to_pin_number(char* str){
    else if(!strcmp(str, "P9_25")) return P9_25;
    else if(!strcmp(str, "P9_26")) return P9_26;
    else if(!strcmp(str, "P9_27")) return P9_27;
-   else if(!strcmp(str, "P9_28")) return P9_28;
-   else if(!strcmp(str, "P9_29")) return P9_29;
-   else if(!strcmp(str, "P9_30")) return P9_30;
+   //Used to control mux:
+   /* else if(!strcmp(str, "P9_28")) return P9_28; */
+   /* else if(!strcmp(str, "P9_29")) return P9_29; */
+   /* else if(!strcmp(str, "P9_30")) return P9_30; */
    else if(!strcmp(str, "P9_31")) return P9_31;
    else if(!strcmp(str, "P9_41")) return P9_41;
    else if(!strcmp(str, "P9_42")) return P9_42;
@@ -204,7 +204,6 @@ typedef struct input {
 
    unsigned int initialized_digital_pin_count;
    unsigned int initialized_digital_pins[MAX_DIGITAL_PINS];
-   unsigned int debouncing[MAX_DIGITAL_PINS];
    int16_t digital_values[MAX_DIGITAL_PINS];
 
    unsigned int initialized_analog_pin_count;
@@ -226,11 +225,86 @@ static void* input_poll_loop(void* user_param){
    int digital_value;
    t_atom output[2];
    t_symbol* pin_symbol;
+   int mux_a, mux_b, mux_c;
+   unsigned int total_delay = 0;
 
    while(1){
       for(i=0; i < x->initialized_analog_pin_count; i++){
          pin = x->initialized_analog_pins[i];
-         value = x->io->Value[pin];
+         // Read regular analog input
+         if(pin <= 6){
+            value = x->io->Value[pin];
+            /* input_process_analog_value(x, pin, value); */
+         }
+         // Read multiplexed analog pin
+         else{
+            switch(pin){
+               case 7:
+                  mux_c = 0;
+                  mux_b = 0;
+                  mux_a = 0;
+                  break;
+
+               case 8:
+                  mux_c = 0;
+                  mux_b = 0;
+                  mux_a = 1;
+                  break;
+                  
+               case 9:
+                  mux_c = 0;
+                  mux_b = 1;
+                  mux_a = 0;
+                  break;
+
+               case 10:
+                  mux_c = 0;
+                  mux_b = 1;
+                  mux_a = 1;
+                  break;
+                  
+               case 11:
+                  mux_c = 1;
+                  mux_b = 0;
+                  mux_a = 0;
+                  break;
+
+               case 12:
+                  mux_c = 1;
+                  mux_b = 0;
+                  mux_a = 1;
+                  break;
+                  
+               case 13:
+                  mux_c = 1;
+                  mux_b = 1;
+                  mux_a = 0;
+                  break;
+                  
+               case 14:
+                  mux_c = 1;
+                  mux_b = 1;
+                  mux_a = 1;
+                  break;
+                  
+               default: 
+                  mux_c = 0;
+                  mux_b = 0;
+                  mux_a = 0;
+                  break;
+            }
+
+            pruio_gpio_out(x->io, P9_29, mux_a);
+            pruio_gpio_out(x->io, P9_30, mux_b);
+            pruio_gpio_out(x->io, P9_31, mux_c);
+
+            usleep(100); //?
+            total_delay += 100;
+
+            value = x->io->Value[7];
+            /* input_process_analog_value(x, pin, value); */
+         }
+
          // Values from ADC are 12 bits, shift right 4 places because
          // we only care for 7 bit precision.
          value = value >> 5; 
@@ -245,6 +319,7 @@ static void* input_poll_loop(void* user_param){
          }
       }
 
+
       for(i=0; i < x->initialized_digital_pin_count; i++){
          pin = x->initialized_digital_pins[i];
          digital_value = pruio_gpio_get(x->io, pin);
@@ -253,7 +328,7 @@ static void* input_poll_loop(void* user_param){
             continue;
          }
 
-         if(x->digital_values[pin] != digital_value && x->debouncing[pin]==0){
+         if(x->digital_values[pin] != digital_value){
             x->digital_values[pin] = digital_value; 
 
             pin_symbol = gensym(input_pin_number_to_string(pin));
@@ -263,18 +338,10 @@ static void* input_poll_loop(void* user_param){
             sys_lock();
             outlet_list(x->outlet_left, 0, 2, output);
             sys_unlock();
-
-            x->debouncing[pin] = 1;
-         }
-         else if(x->debouncing[pin]==DEBOUNCING_PERIOD){
-            x->debouncing[pin]=0;
-         }
-         else if(x->debouncing[pin]>0){
-            x->debouncing[pin] ++;
          }
       }
    
-      usleep(1000);
+      usleep(1000 - total_delay);
    }
 
    return(0);
@@ -340,7 +407,6 @@ static void input_init_digital_pin(t_input* x, char* pin_str){
 
    x->initialized_digital_pins[x->initialized_digital_pin_count] = pin_num;
    x->initialized_digital_pin_count ++;
-   x->debouncing[pin_num]=0;
    debug2("Inited digital pin %s (%u)", pin_str, pin_num);
 }
 
@@ -434,11 +500,6 @@ static void *input_new(void) {
    x->thread_is_running = 0;
    x->initialized_analog_pin_count = 0;
    x->initialized_digital_pin_count = 0;
-
-   int i;
-   for(i=0; i<MAX_DIGITAL_PINS; i++){
-      x->debouncing[i] = 0;
-   }
 
    input_init_gpio(x);
 
