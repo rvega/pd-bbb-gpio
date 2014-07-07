@@ -232,8 +232,7 @@ static void* input_poll_loop(void* user_param){
          pin = x->initialized_analog_pins[i];
          value = x->io->Value[pin];
          // Values from ADC are 12 bits, shift right 4 places because
-         // we only care for 8 bit precision.
-         /* value = value >> 4;  */
+         // we only care for 7 bit precision.
          value = value >> 5; 
          if(x->analog_values[pin] != value){
             x->analog_values[pin] = value; 
