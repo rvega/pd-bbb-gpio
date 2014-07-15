@@ -107,10 +107,9 @@ static unsigned int input_string_to_pin_number(char* str){
    else if(!strcmp(str, "P9_25")) return P9_25;
    else if(!strcmp(str, "P9_26")) return P9_26;
    else if(!strcmp(str, "P9_27")) return P9_27;
-   //Used to control mux:
-   /* else if(!strcmp(str, "P9_28")) return P9_28; */
-   /* else if(!strcmp(str, "P9_29")) return P9_29; */
-   /* else if(!strcmp(str, "P9_30")) return P9_30; */
+   else if(!strcmp(str, "P9_28")) return P9_28;
+   else if(!strcmp(str, "P9_29")) return P9_29;
+   else if(!strcmp(str, "P9_30")) return P9_30;
    else if(!strcmp(str, "P9_31")) return P9_31;
    else if(!strcmp(str, "P9_41")) return P9_41;
    else if(!strcmp(str, "P9_42")) return P9_42;
@@ -227,6 +226,7 @@ static void* input_poll_loop(void* user_param){
    t_symbol* pin_symbol;
    int mux_a, mux_b, mux_c;
    unsigned int total_delay = 0;
+   char* err;
 
    while(1){
       for(i=0; i < x->initialized_analog_pin_count; i++){
@@ -234,7 +234,6 @@ static void* input_poll_loop(void* user_param){
          // Read regular analog input
          if(pin <= 6){
             value = x->io->Value[pin];
-            /* input_process_analog_value(x, pin, value); */
          }
          // Read multiplexed analog pin
          else{
@@ -294,21 +293,35 @@ static void* input_poll_loop(void* user_param){
                   break;
             }
 
-            pruio_gpio_out(x->io, P9_29, mux_a);
-            pruio_gpio_out(x->io, P9_30, mux_b);
-            pruio_gpio_out(x->io, P9_31, mux_c);
+            /* debug("A %i", mux_a); */
+            /* debug("B %i", mux_b); */
+            /* debug("C %i", mux_c); */
+            err = pruio_gpio_out(x->io, P9_27, mux_a);
+            if(err){
+               error("%s/input: Could not set control pins for multiplexer. %s", LIBRARY_NAME, err);
+            }
+            err = pruio_gpio_out(x->io, P9_30, mux_b);
+            if(err){
+               error("%s/input: Could not set control pins for multiplexer. %s", LIBRARY_NAME, err);
+            }
+            err = pruio_gpio_out(x->io, P9_42, mux_c);
+            if(err){
+               error("%s/input: Could not set control pins for multiplexer. %s", LIBRARY_NAME, err);
+            }
 
-            usleep(100); //?
-            total_delay += 100;
+            usleep(120); //?
+            total_delay += 120;
 
             value = x->io->Value[7];
-            /* input_process_analog_value(x, pin, value); */
          }
 
          // Values from ADC are 12 bits, shift right 4 places because
          // we only care for 7 bit precision.
          value = value >> 5; 
+         /* debug("Val: %i",value); */
+         /* debug("Prev val: %i",x->analog_values[pin]); */
          if(x->analog_values[pin] != value){
+            /* debug("yes",0); */
             x->analog_values[pin] = value; 
 
             SETFLOAT(output, pin);
@@ -341,7 +354,9 @@ static void* input_poll_loop(void* user_param){
          }
       }
    
-      usleep(1000 - total_delay);
+      /* debug("%i", 10000 - total_delay); */
+      usleep(10000 - total_delay);
+      total_delay = 0;
    }
 
    return(0);
@@ -388,6 +403,17 @@ static void input_init_gpio(t_input* x){
    x->io = pruio_new(0, 0x98, 0, 1);
    if (x->io->Errr) {
       error("%s/input: Initialisation failed (%s)", LIBRARY_NAME, x->io->Errr);
+   }
+
+   // Configure pins 42, 30 and 27 as outputs
+   if(pruio_gpio_set(x->io, P9_42, PRUIO_OUT1, PRUIO_UNLOCK_NEW)) {
+      error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
+   }
+   if(pruio_gpio_set(x->io, P9_30, PRUIO_OUT1, PRUIO_UNLOCK_NEW)) {
+      error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
+   }
+   if(pruio_gpio_set(x->io, P9_27, PRUIO_OUT1, PRUIO_UNLOCK_NEW)) {
+      error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
    }
 
    if(pruio_config(x->io, 0, 0x1FE, 0, 0, 0)){
