@@ -1,8 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // TO-DO
-// * This object should be a singleton.
 // * Set analog input precision from outside message. 
-//   Currently hard coded to 8 bits
+//   Currently hard coded to 7 bits
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -13,8 +12,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "pruio_c_wrapper.h"
-#include "pruio_pins.h"
+#include "libbeaglebone_gpio.h"
 
 #ifndef LIBRARY_NAME
 #define LIBRARY_NAME "beaglebone_gpio"
@@ -22,170 +20,6 @@
 
 #define UNUSED_PARAMETER(X) ((void)(X))
 
-////////////////////////////////////////////////////////////////////////////////
-// Debug
-//
-
-#define DBG
-
-#ifdef DBG
-#include <stdio.h>
-#define debug(s,t) post(s,t)
-#define debug2(s,t,u) post(s,t,u)
-#else
-#define debug(s,t)   
-#define debug2(s,t)   
-#endif
-
-
-////////////////////////////////////////////////////////////////////////////////
-// Constants
-//
-
-#define MAX_DIGITAL_PINS 67
-#define MAX_ANALOG_PINS 14 // Analog iputs 7 to 14 are handled by mux
-
-static unsigned int input_string_to_pin_number(char* str){
-   if(!strcmp(str, "P8_03")) return P8_03;
-   else if(!strcmp(str, "P8_04")) return P8_04;
-   else if(!strcmp(str, "P8_05")) return P8_05;
-   else if(!strcmp(str, "P8_06")) return P8_06;
-   else if(!strcmp(str, "P8_07")) return P8_07;
-   else if(!strcmp(str, "P8_08")) return P8_08;
-   else if(!strcmp(str, "P8_09")) return P8_09;
-   else if(!strcmp(str, "P8_10")) return P8_10;
-   else if(!strcmp(str, "P8_11")) return P8_11;
-   else if(!strcmp(str, "P8_12")) return P8_12;
-   else if(!strcmp(str, "P8_13")) return P8_13;
-   else if(!strcmp(str, "P8_14")) return P8_14;
-   else if(!strcmp(str, "P8_15")) return P8_15;
-   else if(!strcmp(str, "P8_16")) return P8_16;
-   else if(!strcmp(str, "P8_17")) return P8_17;
-   else if(!strcmp(str, "P8_18")) return P8_18;
-   else if(!strcmp(str, "P8_19")) return P8_19;
-   else if(!strcmp(str, "P8_20")) return P8_20;
-   else if(!strcmp(str, "P8_21")) return P8_21;
-   else if(!strcmp(str, "P8_22")) return P8_22;
-   else if(!strcmp(str, "P8_23")) return P8_23;
-   else if(!strcmp(str, "P8_24")) return P8_24;
-   else if(!strcmp(str, "P8_25")) return P8_25;
-   else if(!strcmp(str, "P8_26")) return P8_26;
-   else if(!strcmp(str, "P8_27")) return P8_27;
-   else if(!strcmp(str, "P8_28")) return P8_28;
-   else if(!strcmp(str, "P8_29")) return P8_29;
-   else if(!strcmp(str, "P8_30")) return P8_30;
-   else if(!strcmp(str, "P8_31")) return P8_31;
-   else if(!strcmp(str, "P8_32")) return P8_32;
-   else if(!strcmp(str, "P8_33")) return P8_33;
-   else if(!strcmp(str, "P8_34")) return P8_34;
-   else if(!strcmp(str, "P8_35")) return P8_35;
-   else if(!strcmp(str, "P8_36")) return P8_36;
-   else if(!strcmp(str, "P8_37")) return P8_37;
-   else if(!strcmp(str, "P8_38")) return P8_38;
-   else if(!strcmp(str, "P8_39")) return P8_39;
-   else if(!strcmp(str, "P8_40")) return P8_40;
-   else if(!strcmp(str, "P8_41")) return P8_41;
-   else if(!strcmp(str, "P8_42")) return P8_42;
-   else if(!strcmp(str, "P8_43")) return P8_43;
-   else if(!strcmp(str, "P8_44")) return P8_44;
-   else if(!strcmp(str, "P8_45")) return P8_45;
-   else if(!strcmp(str, "P8_46")) return P8_46;
-   else if(!strcmp(str, "P9_11")) return P9_11;
-   else if(!strcmp(str, "P9_12")) return P9_12;
-   else if(!strcmp(str, "P9_13")) return P9_13;
-   else if(!strcmp(str, "P9_14")) return P9_14;
-   else if(!strcmp(str, "P9_15")) return P9_15;
-   else if(!strcmp(str, "P9_16")) return P9_16;
-   else if(!strcmp(str, "P9_17")) return P9_17;
-   else if(!strcmp(str, "P9_18")) return P9_18;
-   else if(!strcmp(str, "P9_19")) return P9_19;
-   else if(!strcmp(str, "P9_20")) return P9_20;
-   else if(!strcmp(str, "P9_21")) return P9_21;
-   else if(!strcmp(str, "P9_22")) return P9_22;
-   else if(!strcmp(str, "P9_23")) return P9_23;
-   else if(!strcmp(str, "P9_24")) return P9_24;
-   else if(!strcmp(str, "P9_25")) return P9_25;
-   else if(!strcmp(str, "P9_26")) return P9_26;
-   else if(!strcmp(str, "P9_27")) return P9_27;
-   else if(!strcmp(str, "P9_28")) return P9_28;
-   else if(!strcmp(str, "P9_29")) return P9_29;
-   else if(!strcmp(str, "P9_30")) return P9_30;
-   else if(!strcmp(str, "P9_31")) return P9_31;
-   else if(!strcmp(str, "P9_41")) return P9_41;
-   else if(!strcmp(str, "P9_42")) return P9_42;
-   else return 9999; // Not valid.
-}
-
-static char* input_pin_number_to_string(unsigned int pin){
-   if(pin == P8_03) return "P8_03";
-   else if(pin == P8_04) return "P8_04";
-   else if(pin == P8_05) return "P8_05";
-   else if(pin == P8_06) return "P8_06";
-   else if(pin == P8_07) return "P8_07";
-   else if(pin == P8_08) return "P8_08";
-   else if(pin == P8_09) return "P8_09";
-   else if(pin == P8_10) return "P8_10";
-   else if(pin == P8_11) return "P8_11";
-   else if(pin == P8_12) return "P8_12";
-   else if(pin == P8_13) return "P8_13";
-   else if(pin == P8_14) return "P8_14";
-   else if(pin == P8_15) return "P8_15";
-   else if(pin == P8_16) return "P8_16";
-   else if(pin == P8_17) return "P8_17";
-   else if(pin == P8_18) return "P8_18";
-   else if(pin == P8_19) return "P8_19";
-   else if(pin == P8_20) return "P8_20";
-   else if(pin == P8_21) return "P8_21";
-   else if(pin == P8_22) return "P8_22";
-   else if(pin == P8_23) return "P8_23";
-   else if(pin == P8_24) return "P8_24";
-   else if(pin == P8_25) return "P8_25";
-   else if(pin == P8_26) return "P8_26";
-   else if(pin == P8_27) return "P8_27";
-   else if(pin == P8_28) return "P8_28";
-   else if(pin == P8_29) return "P8_29";
-   else if(pin == P8_30) return "P8_30";
-   else if(pin == P8_31) return "P8_31";
-   else if(pin == P8_32) return "P8_32";
-   else if(pin == P8_33) return "P8_33";
-   else if(pin == P8_34) return "P8_34";
-   else if(pin == P8_35) return "P8_35";
-   else if(pin == P8_36) return "P8_36";
-   else if(pin == P8_37) return "P8_37";
-   else if(pin == P8_38) return "P8_38";
-   else if(pin == P8_39) return "P8_39";
-   else if(pin == P8_40) return "P8_40";
-   else if(pin == P8_41) return "P8_41";
-   else if(pin == P8_42) return "P8_42";
-   else if(pin == P8_43) return "P8_43";
-   else if(pin == P8_44) return "P8_44";
-   else if(pin == P8_45) return "P8_45";
-   else if(pin == P8_46) return "P8_46";
-   else if(pin == P9_11) return "P9_11";
-   else if(pin == P9_12) return "P9_12";
-   else if(pin == P9_13) return "P9_13";
-   else if(pin == P9_14) return "P9_14";
-   else if(pin == P9_15) return "P9_15";
-   else if(pin == P9_16) return "P9_16";
-   else if(pin == P9_17) return "P9_17";
-   else if(pin == P9_18) return "P9_18";
-   else if(pin == P9_19) return "P9_19";
-   else if(pin == P9_20) return "P9_20";
-   else if(pin == P9_21) return "P9_21";
-   else if(pin == P9_22) return "P9_22";
-   else if(pin == P9_23) return "P9_23";
-   else if(pin == P9_24) return "P9_24";
-   else if(pin == P9_25) return "P9_25";
-   else if(pin == P9_26) return "P9_26";
-   else if(pin == P9_27) return "P9_27";
-   else if(pin == P9_28) return "P9_28";
-   else if(pin == P9_29) return "P9_29";
-   else if(pin == P9_30) return "P9_30";
-   else if(pin == P9_31) return "P9_31";
-   else if(pin == P9_41) return "P9_41";
-   else if(pin == P9_42) return "P9_42";
-   else return ""; // Not valid.
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Data
@@ -293,9 +127,6 @@ static void* input_poll_loop(void* user_param){
                   break;
             }
 
-            /* debug("A %i", mux_a); */
-            /* debug("B %i", mux_b); */
-            /* debug("C %i", mux_c); */
             err = pruio_gpio_out(x->io, P9_27, mux_a);
             if(err){
                error("%s/input: Could not set control pins for multiplexer. %s", LIBRARY_NAME, err);
@@ -315,13 +146,10 @@ static void* input_poll_loop(void* user_param){
             value = x->io->Value[7];
          }
 
-         // Values from ADC are 12 bits, shift right 4 places because
+         // Values from ADC are 12 bits, shift right 5 places because
          // we only care for 7 bit precision.
          value = value >> 5; 
-         /* debug("Val: %i",value); */
-         /* debug("Prev val: %i",x->analog_values[pin]); */
          if(x->analog_values[pin] != value){
-            /* debug("yes",0); */
             x->analog_values[pin] = value; 
 
             SETFLOAT(output, pin);
@@ -354,7 +182,6 @@ static void* input_poll_loop(void* user_param){
          }
       }
    
-      /* debug("%i", 10000 - total_delay); */
       usleep(10000 - total_delay);
       total_delay = 0;
    }
@@ -389,23 +216,50 @@ static void input_stop_thread(t_input* x){
 }
 
 static void input_init_gpio(t_input* x){
-   // echo PRUSSDRV> /sys/devices/bone_capemgr.9/slots 
-   FILE* f;
-   f = fopen("/sys/devices/bone_capemgr.9/slots","w");
+
+   // Check if device tree overlay is loaded, load if needed.
+   int device_tree_overlay_loaded = 0;
+   FILE*f;
+   f = fopen("/sys/devices/bone_capemgr.9/slots","rt");
    if(f==NULL){
-      error("%s/input: Initialisation failed (fopen)", LIBRARY_NAME);
+      error("%s/input: Initialisation failed (fopen rt)", LIBRARY_NAME);
       return;
    }
-   fprintf(f, "PRUSSDRV");
+   char line[256];
+   while(fgets(line, 256, f) != NULL){
+      if(strstr(line, "PD-BBB-IO") != NULL){
+         device_tree_overlay_loaded = 1;
+      }
+   }
    fclose(f);
-   usleep(100000);
 
-   x->io = pruio_new(0, 0x98, 0, 1);
-   if (x->io->Errr) {
-      error("%s/input: Initialisation failed (%s)", LIBRARY_NAME, x->io->Errr);
+   if(!device_tree_overlay_loaded){
+      f = fopen("/sys/devices/bone_capemgr.9/slots","w");
+      if(f==NULL){
+         error("%s/input: Initialisation failed (fopen w)", LIBRARY_NAME);
+         return;
+      }
+      fprintf(f, "PD-BBB-IO");
+      fclose(f);
+      usleep(100000);
    }
 
-   // Configure pins 42, 30 and 27 as outputs
+   // Use the same io instance always (static)
+   static PruIo* io;
+   if(io==NULL){
+      io = pruio_new(0, 0x98, 0, 1);
+      debug("Created pruio instance %i",io);
+      if (io->Errr) {
+         error("%s/input: Initialisation failed (%s)", LIBRARY_NAME, io->Errr);
+         return;
+      }
+   }
+   else{
+      debug("Using previous puio instance %i",io);
+   }
+   x->io = io;
+
+   // Configure output pins for mux control
    if(pruio_gpio_set(x->io, P9_42, PRUIO_OUT1, PRUIO_UNLOCK_NEW)) {
       error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
    }
@@ -416,7 +270,7 @@ static void input_init_gpio(t_input* x){
       error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
    }
 
-   if(pruio_config(x->io, 0, 0x1FE, 0, 0, 0)){
+   if(pruio_config(x->io, 0, 0x1FE, 0, 4, 0)){
       error("%s/input: Config failed (%s)", LIBRARY_NAME, x->io->Errr); 
    }
 }
@@ -430,6 +284,12 @@ static void input_init_digital_pin(t_input* x, char* pin_str){
       error("%s/input: Digital pin number '%s' is invalid. Ignoring.", LIBRARY_NAME, pin_str);
       return;
    }
+
+   // For some reason, setting these here, messes upthe pulldown config.  
+   /* if(pruio_gpio_set(x->io, pin_num, PRUIO_IN, PRUIO_LOCK_CHECK)) {
+      error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
+      return;
+   } */
 
    x->initialized_digital_pins[x->initialized_digital_pin_count] = pin_num;
    x->initialized_digital_pin_count ++;
@@ -518,6 +378,16 @@ static void input_digital(t_input* x, t_symbol* s, int argc, t_atom* argv) {
 //
 
 static void *input_new(void) {
+   // Singleton.
+   static int inited;
+   if(inited == 0){
+      inited = 1; 
+   }
+   else{
+      error("%s/input: You can only create one instance of this object.", LIBRARY_NAME);
+      return NULL;
+   }
+
    t_input *x = (t_input *)pd_new(input_class);
 
    x->outlet_left = outlet_new(&x->x_obj, &s_anything);
@@ -537,7 +407,10 @@ static void input_free(t_input *x) {
    input_uninit_all_analog_pins(x);
    input_uninit_all_digital_pins(x);
    input_stop_thread(x);
-   pruio_destroy(x->io);
+
+   // TODO: we're leaking here... Need to implement reference counting for
+   // "global" io object?
+   /* pruio_destroy(x->io); */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
