@@ -37,7 +37,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "libbeaglebone_gpio.h"
+#include "libbbb_gpio.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Data
@@ -63,13 +63,13 @@ typedef struct input {
 } t_input;
 
 // A pointer to the class object.
-t_class *input_class;
+t_class *bbb_input_class;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Poll for pin changes
 // 
 
-static void* input_poll_loop(void* user_param){
+static void* bbb_input_poll_loop(void* user_param){
    t_input* x = (t_input*)user_param;
    unsigned int i, pin;
    int16_t value;
@@ -214,7 +214,7 @@ static void* input_poll_loop(void* user_param){
    return(0);
 }
 
-static void input_start_thread(t_input* x){
+static void bbb_input_start_thread(t_input* x){
    pthread_attr_t attr;
    if(pthread_attr_init(&attr)){
       error("%s/input: Cannot start a new thread.", LIBRARY_NAME);
@@ -224,7 +224,7 @@ static void input_start_thread(t_input* x){
       error("%s/input: Cannot start a new thread.", LIBRARY_NAME);
       return;
    }
-   if(pthread_create(&x->thread, &attr, &input_poll_loop, x)){
+   if(pthread_create(&x->thread, &attr, &bbb_input_poll_loop, x)){
       error("%s/input: Cannot start a new thread.", LIBRARY_NAME);
       return;
    }
@@ -233,14 +233,14 @@ static void input_start_thread(t_input* x){
    debug("Started thread", 0);
 }
 
-static void input_stop_thread(t_input* x){
+static void bbb_input_stop_thread(t_input* x){
    while(pthread_cancel(x->thread)){
       debug("Stopping thread", 0);
    }
    debug("Stopped thread", 0);
 }
 
-static void input_init_gpio(t_input* x){
+static void bbb_input_init_gpio(t_input* x){
 
    // Check if device tree overlay is loaded, load if needed.
    int device_tree_overlay_loaded = 0;
@@ -305,7 +305,7 @@ static void input_init_gpio(t_input* x){
 ////////////////////////////////////////////////////////////////////////////////
 // Init digital pins
 // 
-static void input_init_digital_pin(t_input* x, char* pin_str){
+static void bbb_input_init_digital_pin(t_input* x, char* pin_str){
    unsigned int pin_num = bbb_string_to_pin_number(pin_str);
    if(pin_num == 9999){
       error("%s/input: Digital pin number '%s' is invalid. Ignoring.", LIBRARY_NAME, pin_str);
@@ -323,7 +323,7 @@ static void input_init_digital_pin(t_input* x, char* pin_str){
    debug2("Inited digital pin %s (%u)", pin_str, pin_num);
 }
 
-static void input_uninit_all_digital_pins(t_input* x){
+static void bbb_input_uninit_all_digital_pins(t_input* x){
    unsigned int i;
    for(i=0; i<x->initialized_digital_pin_count; i++){
       debug("Uninited digital pin %u", x->initialized_digital_pins[i]);
@@ -334,13 +334,13 @@ static void input_uninit_all_digital_pins(t_input* x){
 ////////////////////////////////////////////////////////////////////////////////
 // Init Analog Pins
 // 
-static void input_init_analog_pin(t_input* x, unsigned int pin_num){
+static void bbb_input_init_analog_pin(t_input* x, unsigned int pin_num){
    x->initialized_analog_pins[x->initialized_analog_pin_count] = pin_num;
    x->initialized_analog_pin_count ++;
    debug("Inited analog pin %u", pin_num);
 }
 
-static void input_uninit_all_analog_pins(t_input* x){
+static void bbb_input_uninit_all_analog_pins(t_input* x){
    unsigned int i;
    for(i=0; i<x->initialized_analog_pin_count; i++){
       debug("Uninited analog pin %u", x->initialized_analog_pins[i]);
@@ -353,14 +353,14 @@ static void input_uninit_all_analog_pins(t_input* x){
 // 
 
 // Received "analog" message, with parameters
-static void input_analog(t_input* x, t_symbol* s, int argc, t_atom* argv) {
+static void bbb_input_analog(t_input* x, t_symbol* s, int argc, t_atom* argv) {
    UNUSED_PARAMETER(s);
 
    int i = 0;
    float pin_num;
    char* pin_str;
 
-   input_uninit_all_analog_pins(x);
+   bbb_input_uninit_all_analog_pins(x);
    
    // Init new pins
    for(i=0; i<argc; i++){
@@ -370,33 +370,33 @@ static void input_analog(t_input* x, t_symbol* s, int argc, t_atom* argv) {
          error("%s/input: Analog pin number '%s' is invalid. Ignoring.", LIBRARY_NAME, pin_str);
       }
       else{
-         input_init_analog_pin(x, pin_num);
+         bbb_input_init_analog_pin(x, pin_num);
       }
    }
 
    if(!x->thread_is_running){
-      input_start_thread(x);
+      bbb_input_start_thread(x);
    }
 
 }
 
 // Received "digital" message, with parameters
-static void input_digital(t_input* x, t_symbol* s, int argc, t_atom* argv) {
+static void bbb_input_digital(t_input* x, t_symbol* s, int argc, t_atom* argv) {
    UNUSED_PARAMETER(s);
 
    int i = 0;
    char* pin_str;
 
-   input_uninit_all_digital_pins(x);
+   bbb_input_uninit_all_digital_pins(x);
    
    // Init new pins
    for(i=0; i<argc; i++){
       pin_str = atom_getsymbolarg(i, argc, argv)->s_name;
-      input_init_digital_pin(x, pin_str);
+      bbb_input_init_digital_pin(x, pin_str);
    }
 
    if(!x->thread_is_running){
-      input_start_thread(x);
+      bbb_input_start_thread(x);
    }
 }
 
@@ -404,7 +404,7 @@ static void input_digital(t_input* x, t_symbol* s, int argc, t_atom* argv) {
 // Constructor, destructor
 //
 
-static void *input_new(void) {
+static void *bbb_input_new(void) {
    // Singleton.
    static int inited;
    if(inited == 0){
@@ -415,7 +415,7 @@ static void *input_new(void) {
       return NULL;
    }
 
-   t_input *x = (t_input *)pd_new(input_class);
+   t_input *x = (t_input *)pd_new(bbb_input_class);
 
    x->outlet_left = outlet_new(&x->x_obj, &s_anything);
    x->outlet_right = outlet_new(&x->x_obj, &s_anything);
@@ -424,16 +424,16 @@ static void *input_new(void) {
    x->initialized_analog_pin_count = 0;
    x->initialized_digital_pin_count = 0;
 
-   input_init_gpio(x);
+   bbb_input_init_gpio(x);
 
    return (void *)x;
 }
 
-static void input_free(t_input *x) { 
+static void bbb_input_free(t_input *x) { 
    debug("Freeing",0);
-   input_uninit_all_analog_pins(x);
-   input_uninit_all_digital_pins(x);
-   input_stop_thread(x);
+   bbb_input_uninit_all_analog_pins(x);
+   bbb_input_uninit_all_digital_pins(x);
+   bbb_input_stop_thread(x);
 
    // TODO: we're leaking here... Need to implement reference counting for
    // "global" io object?
@@ -444,8 +444,8 @@ static void input_free(t_input *x) {
 // Class definition
 // 
 
-void input_setup(void) {
-   input_class = class_new(gensym("input"), (t_newmethod)input_new, (t_method)input_free, sizeof(t_input), CLASS_DEFAULT, (t_atomtype)0);
-   class_addmethod(input_class, (t_method)input_digital, gensym("digital"), A_GIMME, 0);
-   class_addmethod(input_class, (t_method)input_analog, gensym("analog"), A_GIMME, 0);
+void bbb_input_setup(void) {
+   bbb_input_class = class_new(gensym("input"), (t_newmethod)bbb_input_new, (t_method)bbb_input_free, sizeof(t_input), CLASS_DEFAULT, (t_atomtype)0);
+   class_addmethod(bbb_input_class, (t_method)bbb_input_digital, gensym("digital"), A_GIMME, 0);
+   class_addmethod(bbb_input_class, (t_method)bbb_input_analog, gensym("analog"), A_GIMME, 0);
 }

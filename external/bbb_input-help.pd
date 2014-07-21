@@ -1,9 +1,8 @@
-#N canvas 34 153 505 287 10;
-#X obj 48 158 print analog;
+#N canvas 550 507 505 287 10;
+#X obj 72 158 print analog;
 #X obj 21 189 print digital;
-#X msg 21 98 analog 1 2 3 4 5 6 7;
+#X msg 21 94 analog 1 2 3 4 5 6 7;
 #X text 107 190 Outputs messages like [P9_11 0(;
-#X obj 21 126 input;
 #N canvas 489 236 400 314 license 0;
 #X text 15 3 Copyright (c);
 #X text 15 210 See the GNU General Public License for more details.
@@ -24,17 +23,18 @@ version 3 of the License \, or (at your option) any later version.
 the hope that it will be useful \, but WITHOUT ANY WARRANTY \; without
 even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 PURPOSE.;
-#X text 15 33;
+#X text 15 33 comment;
 #X restore 428 261 pd license;
 #X msg 32 72 digital P9_11 P9_13;
 #X obj 21 14 loadbang;
 #X obj 21 38 delay 200;
 #X text 162 71 Init digital pins 11 and 13 to be used as inputs.;
-#X text 152 98 Init analog pins AIN1 \, AIN2 \, AIN3.;
-#X text 129 157 Outputs messages like [2 127(;
-#X connect 2 0 4 0;
-#X connect 4 0 1 0;
-#X connect 4 1 0 0;
-#X connect 7 0 8 0;
-#X connect 8 0 6 0;
-#X connect 8 0 2 0;
+#X text 152 94 Init analog pins AIN1 \, AIN2 \, AIN3.;
+#X text 153 157 Outputs messages like [2 127(;
+#X obj 21 126 bbb_input;
+#X connect 2 0 11 0;
+#X connect 5 0 11 0;
+#X connect 6 0 7 0;
+#X connect 7 0 5 0;
+#X connect 7 0 2 0;
+#X connect 11 0 1 0;

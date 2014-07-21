@@ -1,5 +1,5 @@
 #ifndef __BBB_IO_COMMON
-#define ___BBB_IO_COMMON
+#define __BBB_IO_COMMON
 
 #include "pruio_c_wrapper.h"
 #include "pruio_pins.h"

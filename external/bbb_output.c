@@ -24,7 +24,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "libbeaglebone_gpio.h"
+#include "libbbb_gpio.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Data
@@ -38,12 +38,12 @@ typedef struct output {
 } t_output;
 
 // A pointer to the class object.
-t_class *output_class;
+t_class *bbb_output_class;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Init digital pins
 // 
-static void output_init_digital_pin(t_output* x, char* pin_str){
+static void bbb_output_init_digital_pin(t_output* x, char* pin_str){
    unsigned int pin_num = bbb_string_to_pin_number(pin_str);
    if(pin_num == 9999){
       error("%s/output: Digital pin number '%s' is invalid. Ignoring.", LIBRARY_NAME, pin_str);
@@ -60,7 +60,7 @@ static void output_init_digital_pin(t_output* x, char* pin_str){
    debug2("Inited digital pin %s (%u)", pin_str, pin_num);
 }
 
-static void output_uninit_all_digital_pins(t_output* x){
+static void bbb_output_uninit_all_digital_pins(t_output* x){
    unsigned int i;
    for(i=0; i<x->initialized_digital_pin_count; i++){
       x->initialized_digital_pins[i] = 9999;
@@ -69,7 +69,7 @@ static void output_uninit_all_digital_pins(t_output* x){
    x->initialized_digital_pin_count = 0;
 }
 
-static void output_init_gpio(t_output* x){
+static void bbb_output_init_gpio(t_output* x){
    // Check if device tree overlay is loaded, load if needed.
    int device_tree_overlay_loaded = 0;
    FILE*f;
@@ -118,18 +118,18 @@ static void output_init_gpio(t_output* x){
 // 
 
 // Received "digital" message, with parameters
-static void output_digital(t_output* x, t_symbol* s, int argc, t_atom* argv) {
+static void bbb_output_digital(t_output* x, t_symbol* s, int argc, t_atom* argv) {
    UNUSED_PARAMETER(s);
 
    int i = 0;
    char* pin_str;
 
-   output_uninit_all_digital_pins(x);
+   bbb_output_uninit_all_digital_pins(x);
    
    // Init new pins
    for(i=0; i<argc; i++){
       pin_str = atom_getsymbolarg(i, argc, argv)->s_name;
-      output_init_digital_pin(x, pin_str);
+      bbb_output_init_digital_pin(x, pin_str);
    }
 
    // "Finalize" pin config.
@@ -139,7 +139,7 @@ static void output_digital(t_output* x, t_symbol* s, int argc, t_atom* argv) {
 }
 
 // Received a message like [P9_11 1(
-static void output_message(t_output* x, t_symbol* s, int argc, t_atom* argv) {
+static void bbb_output_message(t_output* x, t_symbol* s, int argc, t_atom* argv) {
    unsigned int pin_number = bbb_string_to_pin_number(s->s_name);
    int pin_is_inited = 0;
    unsigned int i;
@@ -168,8 +168,8 @@ static void output_message(t_output* x, t_symbol* s, int argc, t_atom* argv) {
 // Constructor, destructor
 //
 
-static void *output_new(void) {
-   t_output *x = (t_output *)pd_new(output_class);
+static void *bbb_output_new(void) {
+   t_output *x = (t_output *)pd_new(bbb_output_class);
 
    int i;
    x->initialized_digital_pin_count = 0;
@@ -177,13 +177,13 @@ static void *output_new(void) {
       x->initialized_digital_pins[i]=9999;
    }
 
-   output_init_gpio(x);
+   bbb_output_init_gpio(x);
    return (void *)x;
 }
 
-static void output_free(t_output *x) { 
+static void bbb_output_free(t_output *x) { 
    debug("Freeing",0);
-   output_uninit_all_digital_pins(x);
+   bbb_output_uninit_all_digital_pins(x);
 
    // TODO: we're leaking here... Need to implement reference counting for
    // "global" io object?
@@ -194,8 +194,8 @@ static void output_free(t_output *x) {
 // Class definition
 // 
 
-void output_setup(void) {
-   output_class = class_new(gensym("output"), (t_newmethod)output_new, (t_method)output_free, sizeof(t_output), CLASS_DEFAULT, (t_atomtype)0);
-   class_addmethod(output_class, (t_method)output_digital, gensym("digital"), A_GIMME, 0);
-   class_addanything(output_class, output_message);
+void bbb_output_setup(void) {
+   bbb_output_class = class_new(gensym("output"), (t_newmethod)bbb_output_new, (t_method)bbb_output_free, sizeof(t_output), CLASS_DEFAULT, (t_atomtype)0);
+   class_addmethod(bbb_output_class, (t_method)bbb_output_digital, gensym("digital"), A_GIMME, 0);
+   class_addanything(bbb_output_class, bbb_output_message);
 }

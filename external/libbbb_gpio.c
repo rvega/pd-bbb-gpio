@@ -1,4 +1,4 @@
-#include "libbeaglebone_gpio.h"
+#include "libbbb_gpio.h"
 #include <string.h>
 
 unsigned int bbb_string_to_pin_number(char* str){
