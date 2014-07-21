@@ -1,12 +1,10 @@
-## Pd library beaglebone_gpio version 1.0.14
-# For instructions on how to use this beaglebone_gpio, see:
-#  http://puredata.info/docs/developer/Makefilebeaglebone_gpio
-LIBRARY_NAME = beaglebone_gpio
+## Pd library beaglebone_gpio version 0.1
+LIBRARY_NAME = bbb_gpio
 
 # add your .c source files, one object per file, to the SOURCES
 # variable, help files will be included automatically, and for GUI
 # objects, the matching .tcl file too
-SOURCES = input.c output.c
+SOURCES = bbb_input.c bbb_output.c
 
 # list all pd objects (i.e. myobject.pd) files here, and their helpfiles will
 # be included automatically

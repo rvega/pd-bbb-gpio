@@ -32,9 +32,9 @@
 #define UNUSED_PARAMETER(X) ((void)(X))
 
 // Optional
-// #define USE_ANALOG_MULTIPLEXOR
+// #define USE_ANALOG_MULTIPLEXER
 
-#ifdef USE_ANALOG_MULTIPLEXOR
+#ifdef USE_ANALOG_MULTIPLEXER
 #define MAX_ANALOG_PINS 14 // Analog iputs 7 to 14 are handled by mux
 #else
 #define MAX_ANALOG_PINS 7

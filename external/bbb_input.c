@@ -78,7 +78,7 @@ static void* input_poll_loop(void* user_param){
    t_symbol* pin_symbol;
    unsigned int total_delay = 0;
 
-   #ifdef USE_ANALOG_MULTIPLEXOR
+   #ifdef USE_ANALOG_MULTIPLEXER
    char* err;
    int mux_a, mux_b, mux_c;
    #endif
@@ -86,7 +86,7 @@ static void* input_poll_loop(void* user_param){
    while(1){
       for(i=0; i < x->initialized_analog_pin_count; i++){
          pin = x->initialized_analog_pins[i];
-         #ifndef USE_ANALOG_MULTIPLEXOR
+         #ifndef USE_ANALOG_MULTIPLEXER
          value = x->io->Value[pin];
          #else
          // Read regular analog input
@@ -169,7 +169,7 @@ static void* input_poll_loop(void* user_param){
 
             value = x->io->Value[7];
          }
-         #endif // USE_ANALOG_MULTIPLEXOR
+         #endif // USE_ANALOG_MULTIPLEXER
 
          // Values from ADC are 12 bits, shift right 5 places because
          // we only care for 7 bit precision.
@@ -284,7 +284,7 @@ static void input_init_gpio(t_input* x){
    }
    x->io = io;
 
-   #ifdef USE_ANALOG_MULTIPLEXOR
+   #ifdef USE_ANALOG_MULTIPLEXER
    // Configure output pins for mux control
    if(pruio_gpio_set(x->io, P9_42, PRUIO_OUT1, PRUIO_UNLOCK_NEW)) {
       error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
@@ -295,7 +295,7 @@ static void input_init_gpio(t_input* x){
    if(pruio_gpio_set(x->io, P9_27, PRUIO_OUT1, PRUIO_UNLOCK_NEW)) {
       error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
    }
-   #endif //USE_ANALOG_MULTIPLEXOR
+   #endif //USE_ANALOG_MULTIPLEXER
 
    if(pruio_config(x->io, 0, 0x1FE, 0, 4, 0)){
       error("%s/input: Config failed (%s)", LIBRARY_NAME, x->io->Errr); 
