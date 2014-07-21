@@ -1,7 +1,7 @@
 #include "libbeaglebone_gpio.h"
 #include <string.h>
 
-unsigned int input_string_to_pin_number(char* str){
+unsigned int bbb_string_to_pin_number(char* str){
    if(!strcmp(str, "P8_03")) return P8_03;
    else if(!strcmp(str, "P8_04")) return P8_04;
    else if(!strcmp(str, "P8_05")) return P8_05;
@@ -72,7 +72,7 @@ unsigned int input_string_to_pin_number(char* str){
    else return 9999; // Not valid.
 }
 
-char* input_pin_number_to_string(unsigned int pin){
+char* bbb_pin_number_to_string(unsigned int pin){
    if(pin == P8_03) return "P8_03";
    else if(pin == P8_04) return "P8_04";
    else if(pin == P8_05) return "P8_05";

@@ -24,11 +24,30 @@
 // Constants
 //
 
-#define MAX_DIGITAL_PINS 200
-#define MAX_ANALOG_PINS 14 // Analog iputs 7 to 14 are handled by mux
 
-unsigned int input_string_to_pin_number(char* str);
-char* input_pin_number_to_string(unsigned int pin);
+#ifndef LIBRARY_NAME
+#define LIBRARY_NAME "beaglebone_gpio"
+#endif
+
+#define UNUSED_PARAMETER(X) ((void)(X))
+
+// Optional
+// #define USE_ANALOG_MULTIPLEXOR
+
+#ifdef USE_ANALOG_MULTIPLEXOR
+#define MAX_ANALOG_PINS 14 // Analog iputs 7 to 14 are handled by mux
+#else
+#define MAX_ANALOG_PINS 7
+#endif
+
+#define MAX_DIGITAL_PINS 200
+
+////////////////////////////////////////////////////////////////////////////////
+// Functions
+//
+
+unsigned int bbb_string_to_pin_number(char* str);
+char* bbb_pin_number_to_string(unsigned int pin);
 
 
 #endif

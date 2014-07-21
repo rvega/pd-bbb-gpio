@@ -1,9 +1,34 @@
 ////////////////////////////////////////////////////////////////////////////////
+// 
+//  Pd-BeagleBoneBlack-Io  
+//
+//  Copyright (C) 2014 Rafael Vega <rvega@elsoftwarehamuerto.org>
+//
+//  This program is free software: you can redistribute it and/or modify it 
+//  under the terms of the GNU General Public License as published by the Free 
+//  Software Foundation, either version 3 of the License, or (at your option) 
+//  any later version.
+//  
+//  This program is distributed in the hope that it will be useful, but WITHOUT 
+//  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+//  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+//  more details.  
+//  
+//  You should have received a copy of the GNU General Public License along 
+//  with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
 // TO-DO
+//
 // * Set analog input precision from outside message. 
 //   Currently hard coded to 7 bits
-
-
+//
+// * Need to implement reference counting on "io" instance. We're simply
+//   not freeing right now (leaking)
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "m_pd.h"
@@ -13,13 +38,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "libbeaglebone_gpio.h"
-
-#ifndef LIBRARY_NAME
-#define LIBRARY_NAME "beaglebone_gpio"
-#endif
-
-#define UNUSED_PARAMETER(X) ((void)(X))
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Data
@@ -58,13 +76,19 @@ static void* input_poll_loop(void* user_param){
    int digital_value;
    t_atom output[2];
    t_symbol* pin_symbol;
-   int mux_a, mux_b, mux_c;
    unsigned int total_delay = 0;
+
+   #ifdef USE_ANALOG_MULTIPLEXOR
    char* err;
+   int mux_a, mux_b, mux_c;
+   #endif
 
    while(1){
       for(i=0; i < x->initialized_analog_pin_count; i++){
          pin = x->initialized_analog_pins[i];
+         #ifndef USE_ANALOG_MULTIPLEXOR
+         value = x->io->Value[pin];
+         #else
          // Read regular analog input
          if(pin <= 6){
             value = x->io->Value[pin];
@@ -140,11 +164,12 @@ static void* input_poll_loop(void* user_param){
                error("%s/input: Could not set control pins for multiplexer. %s", LIBRARY_NAME, err);
             }
 
-            usleep(120); //?
+            usleep(120);
             total_delay += 120;
 
             value = x->io->Value[7];
          }
+         #endif // USE_ANALOG_MULTIPLEXOR
 
          // Values from ADC are 12 bits, shift right 5 places because
          // we only care for 7 bit precision.
@@ -172,7 +197,7 @@ static void* input_poll_loop(void* user_param){
          if(x->digital_values[pin] != digital_value){
             x->digital_values[pin] = digital_value; 
 
-            pin_symbol = gensym(input_pin_number_to_string(pin));
+            pin_symbol = gensym(bbb_pin_number_to_string(pin));
             SETSYMBOL(output, pin_symbol);
             SETFLOAT(output+1, digital_value);
 
@@ -182,7 +207,7 @@ static void* input_poll_loop(void* user_param){
          }
       }
    
-      usleep(10000 - total_delay);
+      usleep(1000 - total_delay);
       total_delay = 0;
    }
 
@@ -259,6 +284,7 @@ static void input_init_gpio(t_input* x){
    }
    x->io = io;
 
+   #ifdef USE_ANALOG_MULTIPLEXOR
    // Configure output pins for mux control
    if(pruio_gpio_set(x->io, P9_42, PRUIO_OUT1, PRUIO_UNLOCK_NEW)) {
       error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
@@ -269,6 +295,7 @@ static void input_init_gpio(t_input* x){
    if(pruio_gpio_set(x->io, P9_27, PRUIO_OUT1, PRUIO_UNLOCK_NEW)) {
       error("%s/input: Pin configuration failed (%s)\n", LIBRARY_NAME, x->io->Errr);
    }
+   #endif //USE_ANALOG_MULTIPLEXOR
 
    if(pruio_config(x->io, 0, 0x1FE, 0, 4, 0)){
       error("%s/input: Config failed (%s)", LIBRARY_NAME, x->io->Errr); 
@@ -279,7 +306,7 @@ static void input_init_gpio(t_input* x){
 // Init digital pins
 // 
 static void input_init_digital_pin(t_input* x, char* pin_str){
-   unsigned int pin_num = input_string_to_pin_number(pin_str);
+   unsigned int pin_num = bbb_string_to_pin_number(pin_str);
    if(pin_num == 9999){
       error("%s/input: Digital pin number '%s' is invalid. Ignoring.", LIBRARY_NAME, pin_str);
       return;
