@@ -10,9 +10,9 @@ I have only tested this on a BeagleBone Black revision B, running Debian 7 and t
 
 2. Make sure the [bbb_input] and [bbb_output] externals are in PD's path and use them in your patches. Here are some screenshots with connection examples:
 
-![input-help.pd screenshot](https://github.com/rvega/pd-bbb/io/blob/master/external/input-help.png)
+![input-help.pd screenshot](https://raw.githubusercontent.com/rvega/pd-bbb-gpio/master/external/bbb_input-help.png)
 
-![output-help.pd screenshot](https://github.com/rvega/pd-bbb/io/blob/master/external/output-help.png)
+![output-help.pd screenshot](https://raw.githubusercontent.com/rvega/pd-bbb-gpio/master/external/bbb_output-help.png)
 
 ## Multiplexing analog pins
 
